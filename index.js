@@ -21,6 +21,7 @@ mongoose
   });
 
 app.use(require("./route/booking"));
+app.use(require("./route/userRoutes"));
 app.listen(process.env.PORT, (port) => {
   console.log(`Server is running on port ${process.env.PORT}`);
 });
