@@ -1,0 +1,62 @@
+[
+  {
+    "name": "Lab One",
+    "address": "123 Main St, City, Country",
+    "contactNumber": "123-456-7890",
+    "testsOffered": []
+  },
+  {
+    "name": "Lab Two",
+    "address": "456 Elm St, City, Country",
+    "contactNumber": "987-654-3210",
+    "testsOffered": []
+  },
+  {
+    "name": "Lab Three",
+    "address": "789 Oak St, City, Country",
+    "contactNumber": "456-789-0123",
+    "testsOffered": []
+  },
+  {
+    "name": "Lab Four",
+    "address": "321 Pine St, City, Country",
+    "contactNumber": "234-567-8901",
+    "testsOffered": []
+  },
+  {
+    "name": "Lab Five",
+    "address": "567 Maple St, City, Country",
+    "contactNumber": "678-901-2345",
+    "testsOffered": []
+  },
+  {
+    "name": "Lab Six",
+    "address": "890 Cedar St, City, Country",
+    "contactNumber": "345-678-9012",
+    "testsOffered": []
+  },
+  {
+    "name": "Lab Seven",
+    "address": "234 Birch St, City, Country",
+    "contactNumber": "789-012-3456",
+    "testsOffered": []
+  },
+  {
+    "name": "Lab Eight",
+    "address": "678 Elmwood St, City, Country",
+    "contactNumber": "901-234-5678",
+    "testsOffered": []
+  },
+  {
+    "name": "Lab Nine",
+    "address": "012 Walnut St, City, Country",
+    "contactNumber": "567-890-1234",
+    "testsOffered": []
+  },
+  {
+    "name": "Lab Ten",
+    "address": "345 Pinecrest St, City, Country",
+    "contactNumber": "123-456-7890",
+    "testsOffered": []
+  }
+]

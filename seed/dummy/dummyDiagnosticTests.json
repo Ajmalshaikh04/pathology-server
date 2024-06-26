@@ -1,0 +1,52 @@
+[
+  {
+    "name": "Blood Test",
+    "description": "Basic blood test",
+    "price": 50
+  },
+  {
+    "name": "X-Ray",
+    "description": "Chest X-Ray",
+    "price": 100
+  },
+  {
+    "name": "MRI",
+    "description": "Head MRI",
+    "price": 300
+  },
+  {
+    "name": "CT Scan",
+    "description": "Abdominal CT Scan",
+    "price": 250
+  },
+  {
+    "name": "Ultrasound",
+    "description": "Pelvic Ultrasound",
+    "price": 120
+  },
+  {
+    "name": "ECG",
+    "description": "Electrocardiogram",
+    "price": 80
+  },
+  {
+    "name": "Endoscopy",
+    "description": "Upper GI Endoscopy",
+    "price": 200
+  },
+  {
+    "name": "Spirometry",
+    "description": "Lung Function Test",
+    "price": 150
+  },
+  {
+    "name": "Colonoscopy",
+    "description": "Colonoscopy",
+    "price": 280
+  },
+  {
+    "name": "DEXA Scan",
+    "description": "Bone Density Scan",
+    "price": 180
+  }
+]

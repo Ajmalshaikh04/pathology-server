@@ -20,8 +20,9 @@ mongoose
     console.log("connection failed", err);
   });
 
-app.use(require("./route/booking"));
-app.use(require("./route/userRoutes"));
+app.use(require("./routes/booking"));
+app.use(require("./routes/userRoutes"));
+app.use(require("./routes/diagnosticLabRoutes"));
 app.listen(process.env.PORT, (port) => {
   console.log(`Server is running on port ${process.env.PORT}`);
 });
