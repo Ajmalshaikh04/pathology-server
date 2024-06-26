@@ -29,7 +29,7 @@ const logInUser = async (req, res) => {
 
     sendOtpMail(email, otp);
 
-    return res.status(201).json({
+    return res.status(200).json({
       success: true,
       message: "OTP sent successfully",
       data: user,
