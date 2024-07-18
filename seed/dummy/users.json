@@ -1,0 +1,182 @@
+[
+  {
+    "name": "Springfield",
+    "address": "123 Elm Street, Springfield, IL 62701",
+    "pinCode": "62701",
+    "__v": 0
+  },
+  {
+    "name": "Lincoln Park",
+    "address": "200 Oak Street, Springfield, IL 62701",
+    "pinCode": "62701",
+    "__v": 0
+  },
+  {
+    "name": "Capital City",
+    "address": "300 Maple Street, Springfield, IL 62701",
+    "pinCode": "62701",
+    "__v": 0
+  },
+  {
+    "name": "Austin",
+    "address": "456 Oak Avenue, Austin, TX 73301",
+    "pinCode": "73301",
+    "__v": 0
+  },
+  {
+    "name": "Downtown",
+    "address": "600 Pine Street, Austin, TX 73301",
+    "pinCode": "73301",
+    "__v": 0
+  },
+  {
+    "name": "South Congress",
+    "address": "800 Cedar Avenue, Austin, TX 73301",
+    "pinCode": "73301",
+    "__v": 0
+  },
+  {
+    "name": "Denver",
+    "address": "789 Maple Road, Denver, CO 80201",
+    "pinCode": "80201",
+    "__v": 0
+  },
+  {
+    "name": "Cherry Creek",
+    "address": "900 Elm Street, Denver, CO 80201",
+    "pinCode": "80201",
+    "__v": 0
+  },
+  {
+    "name": "Capitol Hill",
+    "address": "1100 Birch Avenue, Denver, CO 80201",
+    "pinCode": "80201",
+    "__v": 0
+  },
+  {
+    "name": "Seattle",
+    "address": "101 Pine Lane, Seattle, WA 98101",
+    "pinCode": "98101",
+    "__v": 0
+  },
+  {
+    "name": "Fremont",
+    "address": "202 Birch Boulevard, Seattle, WA 98101",
+    "pinCode": "98101",
+    "__v": 0
+  },
+  {
+    "name": "Queen Anne",
+    "address": "303 Cedar Street, Seattle, WA 98101",
+    "pinCode": "98101",
+    "__v": 0
+  },
+  {
+    "name": "Miami",
+    "address": "202 Birch Boulevard, Miami, FL 33101",
+    "pinCode": "33101",
+    "__v": 0
+  },
+  {
+    "name": "South Beach",
+    "address": "404 Aspen Avenue, Miami, FL 33101",
+    "pinCode": "33101",
+    "__v": 0
+  },
+  {
+    "name": "Brickell",
+    "address": "505 Redwood Road, Miami, FL 33101",
+    "pinCode": "33101",
+    "__v": 0
+  },
+  {
+    "name": "Boston",
+    "address": "303 Cedar Street, Boston, MA 02101",
+    "pinCode": "02101",
+    "__v": 0
+  },
+  {
+    "name": "Back Bay",
+    "address": "606 Willow Lane, Boston, MA 02101",
+    "pinCode": "02101",
+    "__v": 0
+  },
+  {
+    "name": "North End",
+    "address": "707 Cypress Avenue, Boston, MA 02101",
+    "pinCode": "02101",
+    "__v": 0
+  },
+  {
+    "name": "Chicago",
+    "address": "404 Aspen Avenue, Chicago, IL 60601",
+    "pinCode": "60601",
+    "__v": 0
+  },
+  {
+    "name": "Lincoln Park",
+    "address": "505 Redwood Road, Chicago, IL 60601",
+    "pinCode": "60601",
+    "__v": 0
+  },
+  {
+    "name": "San Francisco",
+    "address": "505 Redwood Road, San Francisco, CA 94101",
+    "pinCode": "94101",
+    "__v": 0
+  },
+  {
+    "name": "Downtown",
+    "address": "606 Oak Avenue, San Francisco, CA 94101",
+    "pinCode": "94101",
+    "__v": 0
+  },
+  {
+    "name": "Mission District",
+    "address": "707 Maple Avenue, San Francisco, CA 94101",
+    "pinCode": "94101",
+    "__v": 0
+  },
+  {
+    "name": "New York",
+    "address": "606 Willow Lane, New York, NY 10001",
+    "pinCode": "10001",
+    "__v": 0
+  },
+  {
+    "name": "Manhattan",
+    "address": "707 Cypress Avenue, New York, NY 10001",
+    "pinCode": "10001",
+    "__v": 0
+  },
+  {
+    "name": "Brooklyn",
+    "address": "808 Cedar Street, New York, NY 10001",
+    "pinCode": "10001",
+    "__v": 0
+  },
+  {
+    "name": "Los Angeles",
+    "address": "707 Cypress Avenue, Los Angeles, CA 90001",
+    "pinCode": "90001",
+    "__v": 0
+  },
+  {
+    "name": "Santa Monica",
+    "address": "808 Cedar Street, Los Angeles, CA 90001",
+    "pinCode": "90001",
+    "__v": 0
+  },
+  {
+    "name": "Hollywood",
+    "address": "909 Maple Avenue, Los Angeles, CA 90001",
+    "pinCode": "90001",
+    "__v": 0
+  },
+  {
+    "name": "Phoenix",
+    "address": "808 Palms Street, Phoenix, AZ 85001",
+    "pinCode": "85001",
+    "__v": 0
+  }
+]

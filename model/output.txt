@@ -1,0 +1,219 @@
+﻿=======================================================================
+C:\ABS\Projects\pathology-server\model\agents.js
+
+const mongoose = require("mongoose");
+const Schema = mongoose.Schema;
+
+const agentSchema = new Schema({
+  name: { type: String, required: true },
+  email: { type: String, required: true },
+  contact: { type: String, required: true },
+  location: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Location",
+    required: true,
+  },
+  franchise: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Franchise",
+    required: true,
+  },
+});
+
+module.exports = mongoose.model("Agent", agentSchema);
+
+
+=======================================================================
+C:\ABS\Projects\pathology-server\model\appointment.js
+
+const mongoose = require("mongoose");
+
+const appointmentSchema = new mongoose.Schema(
+  {
+    type: { type: String, required: true },
+    age: { type: Number, required: true },
+    gender: { type: String, required: true },
+    problem: { type: String, required: true },
+    problemDescription: { type: String },
+    user: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+    lab: { type: mongoose.Schema.Types.ObjectId, ref: "Lab", required: true },
+    status: {
+      type: String,
+      enum: ["Pending", "Confirmed", "Completed", "Cancelled"],
+      default: "Pending",
+    },
+    appointmentDate: { type: Date, required: true },
+  },
+  { timestamps: true }
+);
+
+const AppointmentModel = mongoose.model("Appointment", appointmentSchema);
+module.exports = AppointmentModel;
+
+
+=======================================================================
+C:\ABS\Projects\pathology-server\model\diagnosticLabs.js
+
+
+const mongoose = require("mongoose");
+const DiagnosticLabSchema = new mongoose.Schema({
+  userId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+  },
+  name: {
+    type: String,
+    required: true,
+  },
+  address: {
+    type: String,
+    // required: true,
+  },
+  contactNumber: {
+    type: String,
+    required: true,
+  },
+  testsOffered: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "DiagnosticTest",
+    },
+  ],
+});
+
+const DiagnosticLab = mongoose.model("DiagnosticLab", DiagnosticLabSchema);
+
+module.exports = DiagnosticLab;
+
+
+=======================================================================
+C:\ABS\Projects\pathology-server\model\diagnosticTest.js
+
+const mongoose = require("mongoose");
+
+const DiagnosticTestSchema = new mongoose.Schema({
+  name: {
+    type: String,
+    required: true,
+  },
+  description: {
+    type: String,
+    required: true,
+  },
+  price: {
+    type: Number,
+    required: true,
+  },
+});
+
+const DiagnosticTest = mongoose.model("DiagnosticTest", DiagnosticTestSchema);
+
+module.exports = DiagnosticTest;
+
+
+=======================================================================
+C:\ABS\Projects\pathology-server\model\franchise.js
+
+const mongoose = require("mongoose");
+
+const franchiseSchema = new mongoose.Schema(
+  {
+    name: {
+      type: String,
+      required: true,
+    },
+    address: {
+      type: String,
+      required: true,
+    },
+    contactNumber: {
+      type: String,
+      required: true,
+    },
+    email: {
+      type: String,
+      required: true,
+      unique: true,
+    },
+    password: {
+      type: String,
+      required: true,
+    },
+    location: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Location",
+      // required: true,
+    },
+    role: { type: String, default: "franchise" },
+    createdBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
+  },
+  { timestamps: true }
+);
+
+const Franchise = mongoose.model("Franchise", franchiseSchema);
+
+module.exports = Franchise;
+
+
+=======================================================================
+C:\ABS\Projects\pathology-server\model\location.js
+
+const mongoose = require("mongoose");
+const Schema = mongoose.Schema;
+
+const locationSchema = new Schema({
+  name: { type: String, required: true },
+  address: { type: String, required: true },
+  pinCode: { type: String, required: true },
+});
+
+module.exports = mongoose.model("Location", locationSchema);
+
+
+=======================================================================
+C:\ABS\Projects\pathology-server\model\userModel.js
+
+const mongoose = require("mongoose");
+
+const User = new mongoose.Schema(
+  {
+    name: {
+      type: String,
+      // required: true,
+      immutable: true,
+    },
+    mobile: {
+      type: String,
+      required: true,
+      unique: true,
+    },
+    email: {
+      type: String,
+      required: true,
+      unique: true,
+    },
+    password: { type: String, required: true },
+    otp: {
+      type: String,
+      required: true,
+    },
+    role: {
+      type: String,
+      enum: ["user", "franchise", "agent", "counselor", "superAdmin"],
+      default: "user",
+    },
+    adminDetails: {
+      type: mongoose.Schema.Types.Mixed, // To hold additional details based on the admin type
+      default: {},
+    },
+  },
+  { timestamps: true }
+);
+
+module.exports = mongoose.model("User", User);
+
+

@@ -5,6 +5,8 @@ const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
 const { default: mongoose } = require("mongoose");
 const DiagnosticLab = require("../model/diagnosticLabs.js");
+const Franchise = require("../model/franchise.js");
+const APIFeatures = require("../helper/apifeature.js");
 
 const logInUser = async (req, res) => {
   try {
@@ -15,6 +17,7 @@ const logInUser = async (req, res) => {
     const filter = { email: email, mobile: mobile };
     const update = {
       otp,
+      lastLogin: new Date(),
     };
 
     const user = await User.findOneAndUpdate(
@@ -36,6 +39,37 @@ const logInUser = async (req, res) => {
     });
   } catch (err) {
     console.error(err); // Log the error for debugging purposes
+    return res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+    });
+  }
+};
+
+const logOutUser = async (req, res) => {
+  try {
+    const { email, mobile } = req.body;
+
+    const user = await User.findOneAndUpdate(
+      { email, mobile },
+      { $set: { lastLogout: new Date() } },
+      { new: true }
+    );
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "User logged out successfully",
+      data: user,
+    });
+  } catch (err) {
+    console.error(err);
     return res.status(500).json({
       success: false,
       message: "Internal Server Error",
@@ -84,94 +118,48 @@ const verifyOTP = async (req, res) => {
   }
 };
 
-const signInAdmin = async (req, res) => {
-  try {
-    const { email, password } = req.body;
-    const userData = await User.findOne({ email });
-
-    if (!userData) {
-      return res.status(404).json({
-        success: false,
-        message: "Invalid Email or Password",
-      });
-    }
-
-    const passwordMatch = await bcrypt.compare(password, userData.password);
-
-    if (passwordMatch) {
-      if (userData.role === "admin" || userData.role === "superAdmin") {
-        const token = jwt.sign(
-          { _id: userData._id, role: userData.role },
-          process.env.JWT_SECRET_KEY,
-          {
-            expiresIn: "24h",
-          }
-        );
-
-        return res.status(200).json({
-          success: true,
-          message: "Signin Successful",
-          token: token,
-        });
-      } else {
-        return res.status(403).json({
-          success: false,
-          message: "Unauthorized Access",
-        });
-      }
-    } else {
-      return res.status(403).json({
-        success: false,
-        message: "Invalid Email or Password",
-      });
-    }
-  } catch (err) {
-    console.log(err);
-    res.status(500).json({
-      success: false,
-      message: "Internal Server Error",
-    });
-  }
-};
-
-// const registerAdmin = async (req, res) => {
+// const signInAdmin = async (req, res) => {
 //   try {
-//     const { name, mobile, email, password } = req.body;
+//     const { email, password } = req.body;
 
-//     // Check if email or mobile number already exists
-//     const userFound = await User.findOne({
-//       $or: [{ email }, { mobile }],
-//     });
+//     const user = await User.findOne({ email });
+//     const franchise = await Franchise.findOne({ email });
 
-//     if (userFound) {
-//       return res.status(400).json({
+//     if (!user && !franchise) {
+//       return res.status(404).json({
 //         success: false,
-//         message: "User already exists.",
+//         message: "User not found",
 //       });
 //     }
 
-//     const otp = generateOTP();
+//     const account = user || franchise;
 
-//     const saltRounds = 10;
-//     const salt = await bcrypt.genSalt(saltRounds);
-//     const hashedPassword = await bcrypt.hash(password, salt);
+//     if (account.role === "user") {
+//       return res.status(403).json({
+//         success: false,
+//         message: "Unauthorized Access: Only admins are allowed.",
+//       });
+//     }
 
-//     const userData = {
-//       name,
-//       mobile,
-//       email,
-//       password: hashedPassword,
-//       otp,
-//       role: "admin",
-//     };
+//     const passwordMatch = await bcrypt.compare(password, account.password);
+//     if (!passwordMatch) {
+//       return res.status(403).json({
+//         success: false,
+//         message: "Invalid Email or Password",
+//       });
+//     }
 
-//     const user = await User.create(userData);
-//     // sendOtpMail(email, otp);
+//     const token = jwt.sign(
+//       { _id: account._id, role: account.role },
+//       process.env.JWT_SECRET_KEY,
+//       { expiresIn: "24h" }
+//     );
 
-//     return res.status(201).json({
+//     return res.status(200).json({
 //       success: true,
-//       message: "User created successfully",
-//       data: user,
+//       message: "Signin Successful",
+//       role: account.role,
+//       token: token,
 //     });
 //   } catch (err) {
 //     console.error(err);
@@ -181,6 +169,192 @@ const signInAdmin = async (req, res) => {
 //     });
 //   }
 // };
+
+// const signInAdmin = async (req, res) => {
+//   try {
+//     const { email, password } = req.body;
+
+//     const account = await User.aggregate([
+//       { $match: { email } },
+//       {
+//         $unionWith: {
+//           coll: "franchises",
+//           pipeline: [{ $match: { email } }],
+//         },
+//       },
+//       { $limit: 1 },
+//     ]).exec();
+
+//     if (!account || account.length === 0) {
+//       return res.status(404).json({
+//         success: false,
+//         message: "User not found",
+//       });
+//     }
+
+//     const foundAccount = account[0];
+
+//     if (foundAccount.role === "user") {
+//       return res.status(403).json({
+//         success: false,
+//         message: "Unauthorized Access: Only admins are allowed.",
+//       });
+//     }
+
+//     if (!(await bcrypt.compare(password, foundAccount.password))) {
+//       return res.status(403).json({
+//         success: false,
+//         message: "Invalid Email or Password",
+//       });
+//     }
+
+//     const token = jwt.sign(
+//       { _id: foundAccount._id, role: foundAccount.role },
+//       process.env.JWT_SECRET_KEY,
+//       { expiresIn: "24h" }
+//     );
+
+//     console.log(foundAccount);
+//     return res.status(200).json({
+//       success: true,
+//       message: "Signin Successful",
+//       role: foundAccount.role,
+//       location: foundAccount?.location,
+//       token: token,
+//     });
+//   } catch (err) {
+//     console.error(err);
+//     return res.status(500).json({
+//       success: false,
+//       message: "Internal Server Error",
+//     });
+//   }
+// };
+
+const signInAdmin = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    const account = await User.aggregate([
+      { $match: { email } },
+      {
+        $unionWith: {
+          coll: "franchises",
+          pipeline: [
+            { $match: { email } },
+            {
+              $lookup: {
+                from: "locations",
+                localField: "location",
+                foreignField: "_id",
+                as: "locationDetails",
+              },
+            },
+            {
+              $unwind: {
+                path: "$locationDetails",
+                preserveNullAndEmptyArrays: true,
+              },
+            },
+          ],
+        },
+      },
+      {
+        $lookup: {
+          from: "locations",
+          localField: "location",
+          foreignField: "_id",
+          as: "locationDetails",
+        },
+      },
+      {
+        $unwind: { path: "$locationDetails", preserveNullAndEmptyArrays: true },
+      },
+      {
+        $addFields: {
+          "location.pinCode": "$locationDetails.pinCode",
+        },
+      },
+      { $limit: 1 },
+    ]).exec();
+
+    if (!account || account.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    const foundAccount = account[0];
+
+    if (foundAccount.role === "user") {
+      return res.status(403).json({
+        success: false,
+        message: "Unauthorized Access: Only admins are allowed.",
+      });
+    }
+
+    if (!(await bcrypt.compare(password, foundAccount.password))) {
+      return res.status(403).json({
+        success: false,
+        message: "Invalid Email or Password",
+      });
+    }
+
+    const token = jwt.sign(
+      { _id: foundAccount._id, role: foundAccount.role },
+      process.env.JWT_SECRET_KEY,
+      { expiresIn: "24h" }
+    );
+
+    // Update last login date
+    if (foundAccount.role === "franchise") {
+      await Franchise.findByIdAndUpdate(foundAccount._id, {
+        lastLogin: new Date(),
+      });
+    } else {
+      await User.findByIdAndUpdate(foundAccount._id, { lastLogin: new Date() });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Signin Successful",
+      role: foundAccount.role,
+      location: foundAccount.location,
+      token: token,
+      userId: foundAccount._id,
+    });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+    });
+  }
+};
+
+const signOutAdmin = async (req, res) => {
+  try {
+    const { account, role } = req;
+    console.log("signOutAdmin", role, account);
+    if (role === "franchise") {
+      await Franchise.findByIdAndUpdate(account, { lastLogout: new Date() });
+    } else {
+      await User.findByIdAndUpdate(account, { lastLogout: new Date() });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Admin signed out successfully",
+    });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+    });
+  }
+};
 
 const registerAdmin = async (req, res) => {
   const session = await mongoose.startSession();
@@ -252,10 +426,75 @@ const registerAdmin = async (req, res) => {
 
 const getAllUsers = async (req, res) => {
   try {
-    const allUsers = await User.find({});
+    // Create a new instance of APIFeatures
+    const features = new APIFeatures(
+      User.find({ role: "user" }).populate("assignedCounselor"),
+      req.query
+    )
+      .search()
+      .filter()
+      .sort()
+      .limitFields()
+      .paginate();
+
+    // Execute the query
+    const users = await features.query;
+
+    // Get total count for pagination info
+    const totalUsers = await User.countDocuments(features.query._conditions);
+
     res.status(200).json({
       success: true,
-      data: allUsers,
+      results: users.length,
+      totalUsers,
+      data: users,
+      pagination: {
+        currentPage: features.queryString.page * 1 || 1,
+        limit: features.queryString.limit * 1 || 20,
+        totalPages: Math.ceil(
+          totalUsers / (features.queryString.limit * 1 || 20)
+        ),
+      },
+    });
+  } catch (error) {
+    console.error("Error fetching users:", error);
+    res.status(500).json({
+      success: false,
+      message: "An error occurred while fetching users.",
+    });
+  }
+};
+const getAllCouncilors = async (req, res) => {
+  try {
+    // Create a new instance of APIFeatures
+    const features = new APIFeatures(
+      User.find({ role: "councilor" }),
+      req.query
+    )
+      .search()
+      .filter()
+      .sort()
+      .limitFields()
+      .paginate();
+
+    // Execute the query
+    const users = await features.query;
+
+    // Get total count for pagination info
+    const totalUsers = await User.countDocuments(features.query._conditions);
+
+    res.status(200).json({
+      success: true,
+      results: users.length,
+      totalUsers,
+      data: users,
+      pagination: {
+        currentPage: features.queryString.page * 1 || 1,
+        limit: features.queryString.limit * 1 || 20,
+        totalPages: Math.ceil(
+          totalUsers / (features.queryString.limit * 1 || 20)
+        ),
+      },
     });
   } catch (error) {
     console.error("Error fetching users:", error);
@@ -266,10 +505,76 @@ const getAllUsers = async (req, res) => {
   }
 };
 
+const assignCounselor = async (req, res) => {
+  try {
+    const { userId, counselorId } = req.body;
+
+    // Check if the counselor exists and has the role of counselor
+    const counselor = await User.findById({
+      _id: counselorId,
+      role: "counselor",
+    });
+    if (!counselor) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Invalid counselor" });
+    }
+
+    // Check if the user exists
+    const user = await User.findById(userId);
+    if (!user) {
+      return res
+        .status(400)
+        .json({ success: false, message: "User not found" });
+    }
+
+    // Assign the counselor to the user
+    user.assignedCounselor = counselorId;
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      message: "Counselor assigned successfully",
+      data: { userId, counselorId },
+    });
+  } catch (error) {
+    console.error("Error assigning counselor:", error);
+    res.status(500).json({ success: false, message: "Internal server error" });
+  }
+};
+
+const getAllAssignedUsersByCounselorId = async (req, res) => {
+  try {
+    const { counselorId } = req.params;
+
+    // Find all users assigned to the given counselor ID
+    const assignedUsers = await User.find({
+      assignedCounselor: counselorId,
+    });
+
+    res.status(200).json({
+      success: true,
+      results: assignedUsers.length,
+      data: assignedUsers,
+    });
+  } catch (error) {
+    console.error("Error fetching assigned users:", error);
+    res.status(500).json({
+      success: false,
+      message: "An error occurred while fetching assigned users.",
+    });
+  }
+};
+
 module.exports = {
+  logOutUser,
+  signOutAdmin,
   logInUser,
   verifyOTP,
   signInAdmin,
   registerAdmin,
   getAllUsers,
+  getAllCouncilors,
+  assignCounselor,
+  getAllAssignedUsersByCounselorId,
 };

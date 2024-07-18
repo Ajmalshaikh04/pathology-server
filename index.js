@@ -23,6 +23,10 @@ mongoose
 app.use(require("./routes/booking"));
 app.use(require("./routes/userRoutes"));
 app.use(require("./routes/diagnosticLabRoutes"));
+app.use(require("./routes/franchiseRoutes"));
+app.use(require("./routes/agentsRoutes"));
+app.use(require("./routes/appointmentRoutes"));
+
 app.listen(process.env.PORT, (port) => {
   console.log(`Server is running on port ${process.env.PORT}`);
 });

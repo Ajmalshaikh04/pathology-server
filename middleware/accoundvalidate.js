@@ -2,7 +2,10 @@ const jwt = require("jsonwebtoken");
 require("dotenv").config();
 
 const accountMiddleware = (req, res, next) => {
-  const token = req.headers.authorization;
+  console.log(req.body);
+  const token =
+    req?.headers?.authorization || req?.body?.headers?.authorization;
+  console.log("TOKEN>>>>", token);
   try {
     if (token) {
       const { _id, role } = jwt.verify(token, process.env.JWT_SECRET_KEY);
@@ -22,22 +25,20 @@ const accountMiddleware = (req, res, next) => {
   }
 };
 
-const adminMiddleware = (req, res, next) => {
-  if (req.role === "admin" || req.role === "superAdmin") {
-    next();
-  } else {
-    res.status(403).json({ success: false, msg: "Access denied, admin only" });
-  }
+const roleMiddleware = (...allowedRoles) => {
+  return (req, res, next) => {
+    if (allowedRoles.includes(req.role)) {
+      next();
+    } else {
+      res.status(403).json({
+        success: false,
+        msg: `Access denied, allowed roles: ${allowedRoles.join(", ")}`,
+      });
+    }
+  };
 };
 
-const superadminMiddleware = (req, res, next) => {
-  if (req.role === "superAdmin") {
-    next();
-  } else {
-    res
-      .status(403)
-      .json({ success: false, msg: "Access denied, superAdmin only" });
-  }
+module.exports = {
+  accountMiddleware,
+  roleMiddleware,
 };
-
-module.exports = { accountMiddleware, adminMiddleware, superadminMiddleware };

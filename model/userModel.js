@@ -24,9 +24,20 @@ const User = new mongoose.Schema(
     },
     role: {
       type: String,
-      enum: ["user", "admin", "superAdmin"],
+      enum: ["user", "franchise", "agent", "counselor", "superAdmin"],
       default: "user",
     },
+    assignedCounselor: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      default: null,
+    },
+    adminDetails: {
+      type: mongoose.Schema.Types.Mixed,
+      default: {},
+    },
+    lastLogin: { type: Date },
+    lastLogout: { type: Date },
   },
   { timestamps: true }
 );

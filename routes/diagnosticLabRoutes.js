@@ -7,11 +7,7 @@ const {
   updateDiagnosticLabById,
   createDiagnosticTest,
 } = require("../controller/diagnosticLabController");
-const {
-  accountMiddleware,
-  adminMiddleware,
-  superadminMiddleware,
-} = require("../middleware/accoundvalidate");
+const { accountMiddleware } = require("../middleware/accoundvalidate");
 
 const router = express.Router();
 
@@ -19,8 +15,7 @@ const router = express.Router();
 router.post(
   "/create-lab",
   accountMiddleware,
-  adminMiddleware,
-  superadminMiddleware,
+
   createDiagnosticLab
 );
 
@@ -28,21 +23,9 @@ router.get("/labs", getAllDiagnosticLabs);
 router.get("/labs/:id", getDiagnosticLabById);
 
 // PUT /api/diagnostic-labs/labs/:id
-router.put(
-  "/labs/:id",
-  accountMiddleware,
-  adminMiddleware,
-  superadminMiddleware,
-  updateDiagnosticLabById
-);
+router.put("/labs/:id", accountMiddleware, updateDiagnosticLabById);
 
 // POST /api/diagnostic-labs/create-test
-router.post(
-  "/create-test",
-  accountMiddleware,
-  adminMiddleware,
-  superadminMiddleware,
-  createDiagnosticTest
-);
+router.post("/create-test", accountMiddleware, createDiagnosticTest);
 
 module.exports = router;
