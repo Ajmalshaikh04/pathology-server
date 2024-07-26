@@ -1,4 +1,3 @@
-
 const mongoose = require("mongoose");
 const DiagnosticLabSchema = new mongoose.Schema({
   userId: {
@@ -10,12 +9,16 @@ const DiagnosticLabSchema = new mongoose.Schema({
     required: true,
   },
   address: {
-    type: String,
-    // required: true,
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Location",
+    required: true,
   },
   contactNumber: {
     type: String,
     required: true,
+  },
+  image: {
+    type: String,
   },
   testsOffered: [
     {

@@ -3,7 +3,6 @@ const router = express.Router();
 const {
   createAppointment,
   updateAppointment,
-  updateAppointmentStatus,
   deleteAppointment,
   getAllAppointments,
   getAllAppointmentsByAgent,
@@ -12,11 +11,25 @@ const {
   getAppointmentsByUserId,
   approveAppointment,
   rejectAppointment,
+  updateLabTestStatus,
+  updateAppointmentCommission,
+  updateDefaultCommission,
+  updateCommission,
+  getLabsByLocation,
 } = require("../controller/appointmentController");
+const {
+  accountMiddleware,
+  roleMiddleware,
+} = require("../middleware/accoundvalidate");
 
 router.post("/appointments", createAppointment);
 router.put("/appointments/:id", updateAppointment);
-router.put("/appointments/:id/status", updateAppointmentStatus);
+router.put(
+  "/appointments/:id/tests/:testId",
+  accountMiddleware,
+  roleMiddleware("admin", "superAdmin", "councilor"),
+  updateLabTestStatus
+);
 router.delete("/appointments/:id", deleteAppointment);
 
 router.get("/get-all-appointments", getAllAppointments);
@@ -36,5 +49,14 @@ router.put(
   "/appointments/:appointmentId/labs/:labId/reject",
   rejectAppointment
 );
+
+router.patch(
+  "/appointments/:appointmentId/commission",
+  accountMiddleware,
+  roleMiddleware("superAdmin"),
+  updateCommission
+);
+
+router.get("/location", getLabsByLocation);
 
 module.exports = router;

@@ -304,7 +304,7 @@ const signInAdmin = async (req, res) => {
     const token = jwt.sign(
       { _id: foundAccount._id, role: foundAccount.role },
       process.env.JWT_SECRET_KEY,
-      { expiresIn: "24h" }
+      { expiresIn: process.env.JWT_EXPIRE_TIME }
     );
 
     // Update last login date

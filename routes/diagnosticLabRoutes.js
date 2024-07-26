@@ -6,6 +6,9 @@ const {
   createDiagnosticLab,
   updateDiagnosticLabById,
   createDiagnosticTest,
+  updateDiagnosticTestById,
+  deleteDiagnosticTestById,
+  deleteDiagnosticLabById,
 } = require("../controller/diagnosticLabController");
 const { accountMiddleware } = require("../middleware/accoundvalidate");
 
@@ -24,8 +27,15 @@ router.get("/labs/:id", getDiagnosticLabById);
 
 // PUT /api/diagnostic-labs/labs/:id
 router.put("/labs/:id", accountMiddleware, updateDiagnosticLabById);
+router.delete("/labs/:id", accountMiddleware, deleteDiagnosticLabById);
 
 // POST /api/diagnostic-labs/create-test
-router.post("/create-test", accountMiddleware, createDiagnosticTest);
+router.post("/create-lab-test", accountMiddleware, createDiagnosticTest);
+router.put("/update-lab-test", accountMiddleware, updateDiagnosticTestById);
+router.delete(
+  "/delete-lab-test-by-id/:id",
+  accountMiddleware,
+  deleteDiagnosticTestById
+);
 
 module.exports = router;

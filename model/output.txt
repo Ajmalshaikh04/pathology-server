@@ -26,7 +26,86 @@ module.exports = mongoose.model("Agent", agentSchema);
 =======================================================================
 C:\ABS\Projects\pathology-server\model\appointment.js
 
+// const mongoose = require("mongoose");
+// const crypto = require("node:crypto");
+
+// const generateTicket = () => crypto.randomBytes(3).toString("hex");
+
+// const testSchema = new mongoose.Schema({
+//   test: { type: mongoose.Schema.Types.ObjectId, ref: "Test" },
+//   status: {
+//     type: String,
+//     enum: ["Pending", "In Progress", "Completed", "Closed"],
+//     default: "Pending",
+//   },
+// });
+
+// const labSchema = new mongoose.Schema({
+//   lab: { type: mongoose.Schema.Types.ObjectId, ref: "Lab", required: true },
+//   tests: [testSchema],
+// });
+
+// const appointmentSchema = new mongoose.Schema(
+//   {
+//     type: { type: String, required: true },
+//     age: { type: Number, required: true },
+//     gender: { type: String, required: true },
+//     problem: { type: String, required: true },
+//     problemDescription: { type: String },
+//     user: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+//     labs: labSchema,
+//     status: {
+//       type: String,
+//       enum: ["Pending", "Approve", "Reject"],
+//       default: "Pending",
+//     },
+//     appointmentDate: { type: Date, required: true },
+//     ticket: { type: String, default: generateTicket },
+//     createdBy: {
+//       type: mongoose.Schema.Types.ObjectId,
+//       refPath: "createdByModel",
+//     },
+//     createdByModel: {
+//       type: String,
+//       enum: ["User", "Agent", "Franchise", "SuperAdmin"],
+//     },
+//   },
+//   { timestamps: true }
+// );
+
+// const Appointment = mongoose.model("Appointment", appointmentSchema);
+// module.exports = Appointment;
+//===========================================
 const mongoose = require("mongoose");
+const crypto = require("node:crypto");
+
+const generateTicket = () => crypto.randomBytes(3).toString("hex");
+
+const testSchema = new mongoose.Schema({
+  test: { type: mongoose.Schema.Types.ObjectId, ref: "Test" },
+  status: {
+    type: String,
+    enum: ["Pending", "In Progress", "Completed", "Closed"],
+    default: "Pending",
+  },
+  updatedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+  },
+  updatedAt: {
+    type: Date,
+  },
+});
+
+const labSchema = new mongoose.Schema({
+  lab: { type: mongoose.Schema.Types.ObjectId, ref: "Lab", required: true },
+  tests: [testSchema],
+});
+
+const commissionSchema = new mongoose.Schema({
+  superAdminToFranchise: { type: Number, min: 0, max: 100, default: 20 },
+  superAdminToAgent: { type: Number, min: 0, max: 100, default: 20 },
+});
 
 const appointmentSchema = new mongoose.Schema(
   {
@@ -36,24 +115,36 @@ const appointmentSchema = new mongoose.Schema(
     problem: { type: String, required: true },
     problemDescription: { type: String },
     user: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
-    lab: { type: mongoose.Schema.Types.ObjectId, ref: "Lab", required: true },
+    labs: labSchema,
     status: {
       type: String,
-      enum: ["Pending", "Confirmed", "Completed", "Cancelled"],
+      enum: ["Pending", "Approve", "Reject"],
       default: "Pending",
     },
     appointmentDate: { type: Date, required: true },
+    ticket: { type: String, default: generateTicket },
+    createdBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      refPath: "createdByModel",
+    },
+    createdByModel: {
+      type: String,
+      enum: ["User", "Agent", "Franchise", "SuperAdmin"],
+    },
+    commission: {
+      type: commissionSchema,
+      default: () => ({}),
+    },
   },
   { timestamps: true }
 );
 
-const AppointmentModel = mongoose.model("Appointment", appointmentSchema);
-module.exports = AppointmentModel;
+const Appointment = mongoose.model("Appointment", appointmentSchema);
+module.exports = Appointment;
 
 
 =======================================================================
 C:\ABS\Projects\pathology-server\model\diagnosticLabs.js
-
 
 const mongoose = require("mongoose");
 const DiagnosticLabSchema = new mongoose.Schema({
@@ -66,12 +157,18 @@ const DiagnosticLabSchema = new mongoose.Schema({
     required: true,
   },
   address: {
-    type: String,
-    // required: true,
+    location: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Location",
+      required: true,
+    },
   },
   contactNumber: {
     type: String,
     required: true,
+  },
+  image: {
+    type: String,
   },
   testsOffered: [
     {
@@ -96,9 +193,12 @@ const DiagnosticTestSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  image: {
+    type: String,
+  },
   description: {
     type: String,
-    required: true,
+    // required: true,
   },
   price: {
     type: Number,
@@ -150,6 +250,8 @@ const franchiseSchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
+    lastLogin: { type: Date },
+    lastLogout: { type: Date },
   },
   { timestamps: true }
 );
@@ -203,13 +305,20 @@ const User = new mongoose.Schema(
     },
     role: {
       type: String,
-      enum: ["user", "franchise", "agent", "counselor", "superAdmin"],
+      enum: ["user", "franchise", "agent", "councilor", "superAdmin"],
       default: "user",
     },
+    assignedCounselor: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      default: null,
+    },
     adminDetails: {
-      type: mongoose.Schema.Types.Mixed, // To hold additional details based on the admin type
+      type: mongoose.Schema.Types.Mixed,
       default: {},
     },
+    lastLogin: { type: Date },
+    lastLogout: { type: Date },
   },
   { timestamps: true }
 );

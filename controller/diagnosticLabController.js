@@ -1,15 +1,18 @@
 const DiagnosticTest = require("../model/diagnosticTest");
 const DiagnosticLab = require("../model/diagnosticLabs");
+const Location = require("../model/location");
 const APIFeatures = require("../helper/apifeature");
 
 const createDiagnosticLab = async (req, res) => {
-  const { name, address, contactNumber, testsOffered } = req.body;
+  const { name, address, contactNumber, image, imageSrc } = req.body;
 
   try {
     const newLab = new DiagnosticLab({
       name,
       address,
       contactNumber,
+      image,
+      imageSrc,
     });
 
     const savedLab = await newLab.save();
@@ -29,18 +32,17 @@ const getAllDiagnosticLabs = async (req, res) => {
     // Create a new instance of APIFeatures
     const features = new APIFeatures(DiagnosticLab.find(), req.query)
       .search()
-      .filter()
-      .sort()
-      .limitFields();
-
+      .filter();
+    // .sort()
+    // .limitFields();
+    console.log(req.query);
     // Apply pagination after other operations
     const paginatedFeatures = features.paginate();
 
     // Execute the query with population
-    const labs = await paginatedFeatures.query.populate({
-      path: "testsOffered",
-      select: "name price",
-    });
+    const labs = await paginatedFeatures.query
+      .populate("testsOffered")
+      .populate("address");
 
     // Get total count for pagination info
     const totalLabs = await DiagnosticLab.countDocuments(
@@ -83,7 +85,7 @@ const getDiagnosticLabById = async (req, res) => {
 
 const updateDiagnosticLabById = async (req, res) => {
   const { id } = req.params;
-  const { name, address, contactNumber, testsOffered } = req.body;
+  const { name, address, contactNumber, image } = req.body;
 
   try {
     const updatedLab = await DiagnosticLab.findByIdAndUpdate(
@@ -92,7 +94,7 @@ const updateDiagnosticLabById = async (req, res) => {
         name,
         address,
         contactNumber,
-        testsOffered,
+        image,
       },
       { new: true }
     );
@@ -111,9 +113,29 @@ const updateDiagnosticLabById = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
+const deleteDiagnosticLabById = async (req, res) => {
+  const { labId } = req.params;
+
+  try {
+    const deletedLab = await DiagnosticLab.findByIdAndDelete(labId);
+
+    if (!deletedLab) {
+      return res.status(404).json({ message: "Diagnostic lab not found" });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Diagnostic lab deleted successfully",
+      data: deletedLab,
+    });
+  } catch (error) {
+    console.error("Error deleting diagnostic lab", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
 
 const createDiagnosticTest = async (req, res) => {
-  const { name, description, price, diagnosticLabId } = req.body;
+  const { name, description, price, image, diagnosticLabId } = req.body;
 
   try {
     // Create a new diagnostic test
@@ -121,6 +143,7 @@ const createDiagnosticTest = async (req, res) => {
       name,
       description,
       price,
+      image,
     });
 
     const savedTest = await newTest.save();
@@ -145,10 +168,70 @@ const createDiagnosticTest = async (req, res) => {
   }
 };
 
+const deleteDiagnosticTestById = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const test = await DiagnosticTest.findByIdAndDelete(id);
+
+    if (!test) {
+      return res.status(404).json({ message: "Diagnostic test not found" });
+    }
+
+    // Find the diagnostic lab and remove the test from its testsOffered
+    const lab = await DiagnosticLab.findOne({ testsOffered: id });
+    if (lab) {
+      lab.testsOffered.pull(id);
+      await lab.save();
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Diagnostic test deleted successfully",
+    });
+  } catch (error) {
+    console.error("Error deleting diagnostic test", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+const updateDiagnosticTestById = async (req, res) => {
+  const { name, description, price, image, id } = req.body;
+
+  try {
+    const updatedTest = await DiagnosticTest.findByIdAndUpdate(
+      id,
+      {
+        name,
+        description,
+        price,
+        image,
+      },
+      { new: true }
+    );
+
+    if (!updatedTest) {
+      return res.status(404).json({ message: "Diagnostic test not found" });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Diagnostic test updated successfully",
+      data: updatedTest,
+    });
+  } catch (error) {
+    console.error("Error updating diagnostic test", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
 module.exports = {
   getAllDiagnosticLabs,
   getDiagnosticLabById,
   createDiagnosticLab,
   updateDiagnosticLabById,
   createDiagnosticTest,
+  deleteDiagnosticTestById,
+  updateDiagnosticTestById,
+  deleteDiagnosticLabById,
 };

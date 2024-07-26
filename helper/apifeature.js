@@ -3,6 +3,32 @@ class APIFeatures {
     this.query = query;
     this.queryString = queryString;
   }
+  // search() {
+  //   if (this.queryString.search) {
+  //     const searchQuery = this.queryString.search;
+
+  //     // Get all fields from the model's schema
+  //     const searchFields = Object.keys(this.query.model.schema.paths);
+
+  //     // Create conditions for each field
+  //     const orConditions = searchFields
+  //       .map((field) => {
+  //         // Exclude fields that are not strings or numbers
+  //         const fieldType = this.query.model.schema.paths[field].instance;
+  //         if (fieldType === "String" || fieldType === "Number") {
+  //           return { [field]: { $regex: searchQuery, $options: "i" } };
+  //         }
+  //         return null;
+  //       })
+  //       .filter((condition) => condition !== null);
+
+  //     if (orConditions.length > 0) {
+  //       this.query = this.query.or(orConditions);
+  //     }
+  //   }
+  //   return this;
+  // }
+
   search() {
     if (this.queryString.search) {
       const searchQuery = this.queryString.search;
@@ -10,17 +36,15 @@ class APIFeatures {
       // Get all fields from the model's schema
       const searchFields = Object.keys(this.query.model.schema.paths);
 
-      // Create conditions for each field
+      // Create conditions for each field, excluding `__v` and non-string/number fields
       const orConditions = searchFields
-        .map((field) => {
+        .filter((field) => {
           // Exclude fields that are not strings or numbers
           const fieldType = this.query.model.schema.paths[field].instance;
-          if (fieldType === "String" || fieldType === "Number") {
-            return { [field]: { $regex: searchQuery, $options: "i" } };
-          }
-          return null;
+          return fieldType === "String" || fieldType === "Number";
         })
-        .filter((condition) => condition !== null);
+        .filter((field) => field !== "__v") // Exclude the `__v` field
+        .map((field) => ({ [field]: { $regex: searchQuery, $options: "i" } }));
 
       if (orConditions.length > 0) {
         this.query = this.query.or(orConditions);
@@ -28,6 +52,7 @@ class APIFeatures {
     }
     return this;
   }
+
   filter() {
     const queryObj = { ...this.queryString };
     const excludedFields = ["page", "sort", "limit", "fields"];
