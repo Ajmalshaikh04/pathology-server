@@ -7,9 +7,18 @@ const createDiagnosticLab = async (req, res) => {
   const { name, address, contactNumber, image, imageSrc } = req.body;
 
   try {
+    const newLocation = new Location({
+      address: address.address,
+      city: address.city,
+      state: address.state,
+      pinCode: address.pinCode,
+    });
+
+    const savedLocation = await newLocation.save();
+
     const newLab = new DiagnosticLab({
       name,
-      address,
+      address: savedLocation._id,
       contactNumber,
       image,
       imageSrc,
@@ -114,18 +123,29 @@ const updateDiagnosticLabById = async (req, res) => {
   }
 };
 const deleteDiagnosticLabById = async (req, res) => {
-  const { labId } = req.params;
+  const { id } = req.params;
+  console.log("Lab ID", id);
 
   try {
-    const deletedLab = await DiagnosticLab.findByIdAndDelete(labId);
+    // Find the lab first to get the location ID
+    const lab = await DiagnosticLab.findById(id);
 
-    if (!deletedLab) {
+    if (!lab) {
       return res.status(404).json({ message: "Diagnostic lab not found" });
     }
 
+    // Delete the associated location
+    if (lab.address) {
+      await Location.findByIdAndDelete(lab.address);
+    }
+
+    // Now delete the lab
+    const deletedLab = await DiagnosticLab.findByIdAndDelete(id);
+    console.log("Deleted Lab", deletedLab);
+
     res.status(200).json({
       success: true,
-      message: "Diagnostic lab deleted successfully",
+      message: "Diagnostic lab and associated location deleted successfully",
       data: deletedLab,
     });
   } catch (error) {

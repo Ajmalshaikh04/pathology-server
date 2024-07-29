@@ -4,6 +4,47 @@ const Appointment = require("../model/appointment");
 const DiagnosticLab = require("../model/diagnosticLabs");
 const Location = require("../model/location");
 
+// const createAppointment = async (req, res) => {
+//   try {
+//     const {
+//       type,
+//       age,
+//       gender,
+//       problem,
+//       problemDescription,
+//       referral,
+//       lab,
+//       appointmentDate,
+//       tests,
+//       commission,
+//     } = req.body;
+
+//     // Find the agent using the referral number
+//     const agent = await Agents.findOne({ contact: referral });
+//     console.log(agent);
+
+//     const newAppointment = new Appointment({
+//       type,
+//       age,
+//       gender,
+//       problem,
+//       problemDescription,
+//       referral: agent._id,
+//       lab,
+//       appointmentDate,
+//       tests,
+//       commission,
+//       createdBy: req.account,
+//       createdByModel: req.role.charAt(0).toUpperCase() + req.role.slice(1),
+//     });
+
+//     await newAppointment.save();
+//     res.status(201).json(newAppointment);
+//   } catch (error) {
+//     res.status(500).json({ message: error.message });
+//   }
+// };
+
 const createAppointment = async (req, res) => {
   try {
     const {
@@ -19,11 +60,16 @@ const createAppointment = async (req, res) => {
       commission,
     } = req.body;
 
-    // Find the agent using the referral number
-    const agent = await Agents.findOne({ contact: referral });
+    let agentId = null;
 
-    if (!agent) {
-      return res.status(404).json({ message: "Agent not found" });
+    // If referral is provided, find the agent
+    if (referral) {
+      const agent = await Agents.findOne({ contact: referral });
+      if (agent) {
+        agentId = agent._id;
+      } else {
+        console.log("No agent found with contact:", referral);
+      }
     }
 
     const newAppointment = new Appointment({
@@ -32,7 +78,7 @@ const createAppointment = async (req, res) => {
       gender,
       problem,
       problemDescription,
-      referral: agent._id,
+      referral: agentId,
       lab,
       appointmentDate,
       tests,

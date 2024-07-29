@@ -2,17 +2,30 @@
 
 const APIFeatures = require("../helper/apifeature");
 const Franchise = require("../model/franchise");
+const Location = require("../model/location");
 
 // Create Franchise
 exports.createFranchise = async (req, res) => {
   try {
-    const { name, address, contactNumber } = req.body;
+    const { name, contactNumber, email, password } = req.body;
+    const { address, city, state, pinCode } = req.body.location;
     const createdBy = req.account;
 
+    // Create location
+    const location = new Location({
+      address,
+      city,
+      state,
+      pinCode,
+    });
+    await location.save();
+    console.log(location);
     const franchise = new Franchise({
       name,
-      address,
+      location: location._id,
       contactNumber,
+      email,
+      password,
       createdBy,
     });
 
@@ -43,7 +56,9 @@ exports.getAllFranchises = async (req, res) => {
     const franchises = await features.query.populate("location");
 
     // Get total count for pagination info
-    const totalFranchises = await Franchise.countDocuments(features.query._conditions);
+    const totalFranchises = await Franchise.countDocuments(
+      features.query._conditions
+    );
 
     res.status(200).json({
       success: true,
@@ -53,8 +68,10 @@ exports.getAllFranchises = async (req, res) => {
       pagination: {
         currentPage: features.queryString.page * 1 || 1,
         limit: features.queryString.limit * 1 || 20,
-        totalPages: Math.ceil(totalFranchises / (features.queryString.limit * 1 || 20))
-      }
+        totalPages: Math.ceil(
+          totalFranchises / (features.queryString.limit * 1 || 20)
+        ),
+      },
     });
   } catch (error) {
     console.error("Error fetching franchises:", error);
@@ -82,15 +99,26 @@ exports.getFranchiseById = async (req, res) => {
 // Update Franchise by ID
 exports.updateFranchiseById = async (req, res) => {
   try {
-    const { name, address, contactNumber } = req.body;
-    const franchise = await Franchise.findByIdAndUpdate(
-      req.params.id,
-      { name, address, contactNumber },
-      { new: true }
-    );
+    const { name, address, city, state, pinCode, contactNumber } = req.body;
+    const franchise = await Franchise.findById(req.params.id);
+
     if (!franchise) {
       return res.status(404).json({ message: "Franchise not found" });
     }
+
+    // Update location
+    await Location.findByIdAndUpdate(franchise.location, {
+      address,
+      city,
+      state,
+      pinCode,
+    });
+
+    // Update franchise
+    franchise.name = name;
+    franchise.contactNumber = contactNumber;
+    await franchise.save();
+
     res.status(200).json({
       success: true,
       message: "Franchise updated successfully",
@@ -105,10 +133,17 @@ exports.updateFranchiseById = async (req, res) => {
 // Delete Franchise by ID
 exports.deleteFranchiseById = async (req, res) => {
   try {
-    const franchise = await Franchise.findByIdAndDelete(req.params.id);
+    const franchise = await Franchise.findById(req.params.id);
     if (!franchise) {
       return res.status(404).json({ message: "Franchise not found" });
     }
+
+    // Delete the associated location
+    await Location.findByIdAndDelete(franchise.location);
+
+    // Delete the franchise
+    await Franchise.findByIdAndDelete(req.params.id);
+
     res
       .status(200)
       .json({ success: true, message: "Franchise deleted successfully" });

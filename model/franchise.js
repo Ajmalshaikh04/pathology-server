@@ -6,10 +6,6 @@ const franchiseSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
-    address: {
-      type: String,
-      required: true,
-    },
     contactNumber: {
       type: String,
       required: true,
@@ -21,7 +17,6 @@ const franchiseSchema = new mongoose.Schema(
     },
     password: {
       type: String,
-      required: true,
     },
     location: {
       type: mongoose.Schema.Types.ObjectId,
@@ -32,7 +27,6 @@ const franchiseSchema = new mongoose.Schema(
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
-      required: true,
     },
     lastLogin: { type: Date },
     lastLogout: { type: Date },
