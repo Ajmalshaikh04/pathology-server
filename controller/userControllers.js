@@ -86,7 +86,7 @@ const verifyOTP = async (req, res) => {
     if (user) {
       if (user.otp === otp) {
         const token = await jwt.sign(
-          { _id: user._id },
+          { _id: user._id, role: user.role },
           process.env.JWT_SECRET_KEY,
           {
             expiresIn: process.env.JWT_EXPIRE_TIME,
