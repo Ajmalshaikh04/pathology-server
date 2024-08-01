@@ -46,7 +46,7 @@ const appointmentSchema = new mongoose.Schema(
       enum: ["Pending", "Approve", "Reject"],
       default: "Pending",
     },
-    appointmentDate: { type: Date, required: true },
+    appointmentDate: { type: Date },
     ticket: { type: String, default: generateTicket },
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
