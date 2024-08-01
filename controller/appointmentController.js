@@ -4,6 +4,7 @@ const User = require("../model/userModel");
 const Appointment = require("../model/appointment");
 const DiagnosticLab = require("../model/diagnosticLabs");
 const Location = require("../model/location");
+const DiagnosticTest = require("../model/diagnosticTest");
 
 // const createAppointment = async (req, res) => {
 //   try {
@@ -31,7 +32,13 @@ const Location = require("../model/location");
 //         console.log("No agent found with contact:", referral);
 //       }
 //     }
-//     console.log(req.role);
+
+//     // Set createdByModel based on role
+//     const createdByModel =
+//       req.role === "superAdmin"
+//         ? "User"
+//         : req.role.charAt(0).toUpperCase() + req.role.slice(1);
+
 //     const newAppointment = new Appointment({
 //       type,
 //       age,
@@ -44,7 +51,7 @@ const Location = require("../model/location");
 //       tests,
 //       commission,
 //       createdBy: req.account,
-//       createdByModel: req.role.charAt(0).toUpperCase() + req.role.slice(1),
+//       createdByModel,
 //     });
 
 //     await newAppointment.save();
@@ -63,34 +70,53 @@ const createAppointment = async (req, res) => {
       problem,
       problemDescription,
       referral,
-      lab,
+      lab: labContact,
       appointmentDate,
-      tests,
+      tests: testContacts,
       commission,
+      labs,
     } = req.body;
 
     let referralId = null;
+    let labId = null;
+    let testIds = [];
 
-    // Check the role and find the appropriate referral
+    // If referral is provided, find the agent
     if (referral) {
-      if (req.role === "superAdmin") {
-        // If superAdmin, look up the User schema
-        const user = await User.findOne({ contact: referral });
-        if (user) {
-          referralId = user._id;
-        } else {
-          console.log("No user found with contact:", referral);
-        }
+      const agent = await Agents.findOne({ contact: referral });
+      if (agent) {
+        referralId = agent._id;
       } else {
-        // For other roles, look up the Agent schema
-        const agent = await Agents.findOne({ contact: referral });
-        if (agent) {
-          referralId = agent._id;
-        } else {
-          console.log("No agent found with contact:", referral);
-        }
+        console.log("No agent found with contact:", referral);
       }
     }
+
+    // If lab is provided, find the lab
+    if (labContact) {
+      const lab = await DiagnosticLab.findOne({ contact: labContact });
+      if (lab) {
+        labId = lab._id;
+      } else {
+        console.log("No lab found with contact:", labContact);
+      }
+    }
+
+    // If tests are provided, find the tests
+    if (testContacts && testContacts.length > 0) {
+      testIds = await Promise.all(
+        testContacts.map(async (testContact) => {
+          const test = await DiagnosticTest.findOne({ contact: testContact });
+          return test ? test._id : null;
+        })
+      );
+      testIds = testIds.filter((testId) => testId !== null); // Remove null values
+    }
+
+    // Set createdByModel based on role
+    const createdByModel =
+      req.role === "superAdmin"
+        ? "User"
+        : req.role.charAt(0).toUpperCase() + req.role.slice(1);
 
     const newAppointment = new Appointment({
       type,
@@ -99,12 +125,13 @@ const createAppointment = async (req, res) => {
       problem,
       problemDescription,
       referral: referralId,
-      lab,
+      lab: labId,
       appointmentDate,
-      tests,
+      tests: testIds,
       commission,
       createdBy: req.account,
-      createdByModel: req.role.charAt(0).toUpperCase() + req.role.slice(1),
+      createdByModel,
+      labs,
     });
 
     await newAppointment.save();
