@@ -1,5 +1,6 @@
 const APIFeatures = require("../helper/apifeature");
 const Agents = require("../model/agents");
+const User = require("../model/userModel");
 const Appointment = require("../model/appointment");
 const DiagnosticLab = require("../model/diagnosticLabs");
 const Location = require("../model/location");
@@ -19,17 +20,25 @@ const Location = require("../model/location");
 //       commission,
 //     } = req.body;
 
-//     // Find the agent using the referral number
-//     const agent = await Agents.findOne({ contact: referral });
-//     console.log(agent);
+//     let agentId = null;
 
+//     // If referral is provided, find the agent
+//     if (referral) {
+//       const agent = await Agents.findOne({ contact: referral });
+//       if (agent) {
+//         agentId = agent._id;
+//       } else {
+//         console.log("No agent found with contact:", referral);
+//       }
+//     }
+//     console.log(req.role);
 //     const newAppointment = new Appointment({
 //       type,
 //       age,
 //       gender,
 //       problem,
 //       problemDescription,
-//       referral: agent._id,
+//       referral: agentId,
 //       lab,
 //       appointmentDate,
 //       tests,
@@ -60,15 +69,26 @@ const createAppointment = async (req, res) => {
       commission,
     } = req.body;
 
-    let agentId = null;
+    let referralId = null;
 
-    // If referral is provided, find the agent
+    // Check the role and find the appropriate referral
     if (referral) {
-      const agent = await Agents.findOne({ contact: referral });
-      if (agent) {
-        agentId = agent._id;
+      if (req.role === "superAdmin") {
+        // If superAdmin, look up the User schema
+        const user = await User.findOne({ contact: referral });
+        if (user) {
+          referralId = user._id;
+        } else {
+          console.log("No user found with contact:", referral);
+        }
       } else {
-        console.log("No agent found with contact:", referral);
+        // For other roles, look up the Agent schema
+        const agent = await Agents.findOne({ contact: referral });
+        if (agent) {
+          referralId = agent._id;
+        } else {
+          console.log("No agent found with contact:", referral);
+        }
       }
     }
 
@@ -78,7 +98,7 @@ const createAppointment = async (req, res) => {
       gender,
       problem,
       problemDescription,
-      referral: agentId,
+      referral: referralId,
       lab,
       appointmentDate,
       tests,
@@ -281,8 +301,7 @@ const getAllAppointments = async (req, res) => {
 const getAppointmentsByUserId = async (req, res) => {
   try {
     const { userId } = req.params;
-    const appointments = await Appointment.find({ user: userId })
-      .populate("user")
+    const appointments = await Appointment.find({ createdBy: userId })
       .populate("createdBy")
       .populate({
         path: "labs.lab",
@@ -299,20 +318,22 @@ const getAppointmentsByUserId = async (req, res) => {
 };
 
 const approveAppointment = async (req, res) => {
-  const { appointmentId, labId } = req.params;
+  const { appointmentId } = req.params;
 
   try {
-    const appointment = await Appointment.findOneAndUpdate(
-      { _id: appointmentId, "labs.lab": labId },
-      { $set: { "labs.$.status": "Approve" } },
+    const appointment = await Appointment.findByIdAndUpdate(
+      appointmentId,
+      { $set: { status: "Approve" } },
       { new: true }
     );
 
     if (!appointment) {
-      return res.status(404).json({ message: "Appointment or lab not found" });
+      return res.status(404).json({ message: "Appointment not found" });
     }
 
-    return res.status(200).json({ message: "Lab approved", appointment });
+    return res
+      .status(200)
+      .json({ message: "Appointment approved", appointment });
   } catch (error) {
     console.error(error);
     return res.status(500).json({ message: "Server error" });
@@ -320,20 +341,22 @@ const approveAppointment = async (req, res) => {
 };
 
 const rejectAppointment = async (req, res) => {
-  const { appointmentId, labId } = req.params;
+  const { appointmentId } = req.params;
 
   try {
-    const appointment = await Appointment.findOneAndUpdate(
-      { _id: appointmentId, "labs.lab": labId },
-      { $set: { "labs.$.status": "Reject" } },
+    const appointment = await Appointment.findByIdAndUpdate(
+      appointmentId,
+      { $set: { status: "Reject" } },
       { new: true }
     );
 
     if (!appointment) {
-      return res.status(404).json({ message: "Appointment or lab not found" });
+      return res.status(404).json({ message: "Appointment not found" });
     }
 
-    return res.status(200).json({ message: "Lab rejected", appointment });
+    return res
+      .status(200)
+      .json({ message: "Appointment rejected", appointment });
   } catch (error) {
     console.error(error);
     return res.status(500).json({ message: "Server error" });
@@ -441,6 +464,22 @@ const getLabsByLocation = async (req, res) => {
   }
 };
 
+const getLabsWithTestsInProgress = async (req, res) => {
+  try {
+    console.log("Fetching labs with tests in progress...");
+    const appointments = await Appointment.find({
+      "labs.tests": { $elemMatch: { status: "In Progress" } },
+    }).exec();
+
+    res.status(200).json({
+      appointments,
+      totalAppointments: appointments.length,
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 module.exports = {
   createAppointment,
   updateAppointment,
@@ -455,4 +494,5 @@ module.exports = {
   rejectAppointment,
   updateCommission,
   getLabsByLocation,
+  getLabsWithTestsInProgress,
 };

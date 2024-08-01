@@ -16,13 +16,14 @@ const {
   updateDefaultCommission,
   updateCommission,
   getLabsByLocation,
+  getLabsWithTestsInProgress,
 } = require("../controller/appointmentController");
 const {
   accountMiddleware,
   roleMiddleware,
 } = require("../middleware/accoundvalidate");
 
-router.post("/appointments", createAppointment);
+router.post("/appointments", accountMiddleware, createAppointment);
 router.put("/appointments/:id", updateAppointment);
 router.put(
   "/appointments/:id/tests/:testId",
@@ -58,5 +59,7 @@ router.patch(
 );
 
 router.get("/location", getLabsByLocation);
+
+router.get("/get-labs-in-progress", getLabsWithTestsInProgress);
 
 module.exports = router;

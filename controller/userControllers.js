@@ -7,6 +7,7 @@ const { default: mongoose } = require("mongoose");
 const DiagnosticLab = require("../model/diagnosticLabs.js");
 const Franchise = require("../model/franchise.js");
 const APIFeatures = require("../helper/apifeature.js");
+const Agents = require("../model/agents.js");
 
 const logInUser = async (req, res) => {
   try {
@@ -566,6 +567,47 @@ const getAllAssignedUsersByCounselorId = async (req, res) => {
   }
 };
 
+const getAllAgents = async (req, res) => {
+  try {
+    // Create a new instance of APIFeatures
+    const features = new APIFeatures(
+      Agents.find({}).populate("location"),
+      req.query
+    )
+      .search()
+      .filter()
+      .sort()
+      .limitFields()
+      .paginate();
+
+    // Execute the query
+    const users = await features.query;
+
+    // Get total count for pagination info
+    const totalUsers = await Agents.countDocuments(features.query._conditions);
+
+    res.status(200).json({
+      success: true,
+      results: users.length,
+      totalUsers,
+      data: users,
+      pagination: {
+        currentPage: features.queryString.page * 1 || 1,
+        limit: features.queryString.limit * 1 || 20,
+        totalPages: Math.ceil(
+          totalUsers / (features.queryString.limit * 1 || 20)
+        ),
+      },
+    });
+  } catch (error) {
+    console.error("Error fetching Agents:", error);
+    res.status(500).json({
+      success: false,
+      message: "An error occurred while fetching Agents.",
+    });
+  }
+};
+
 module.exports = {
   logOutUser,
   signOutAdmin,
@@ -575,6 +617,7 @@ module.exports = {
   registerAdmin,
   getAllUsers,
   getAllCouncilors,
+  getAllAgents,
   assignCounselor,
   getAllAssignedUsersByCounselorId,
 };

@@ -12,6 +12,7 @@ const {
   signOutAdmin,
   assignCounselor,
   getAllAssignedUsersByCounselorId,
+  getAllAgents,
 } = require("../controller/userControllers");
 const {
   accountMiddleware,
@@ -43,6 +44,12 @@ router.get(
   accountMiddleware,
   roleMiddleware("admin", "superAdmin", "franchise", "councilor"),
   getAllUsers
+);
+router.get(
+  "/get-all-agents",
+  accountMiddleware,
+  roleMiddleware("admin", "superAdmin", "franchise", "councilor"),
+  getAllAgents
 );
 router.get(
   "/all-councilor",

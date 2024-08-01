@@ -9,6 +9,7 @@ const {
   createAgent,
   updateAgent,
   deleteAgent,
+  getAppointmentsByAgentsId,
 } = require("../controller/agentController");
 const { accountMiddleware } = require("../middleware/accoundvalidate");
 
@@ -24,11 +25,11 @@ router.get(
 );
 
 // GET /api/agents/location/:franchiseLocationId/:agentLocationId
+router.get("/location/:pincode", accountMiddleware, getAgentsByPincode);
 router.get(
-  "/location/:pincode",
+  "/appointments/:agentId",
   accountMiddleware,
-
-  getAgentsByPincode
+  getAppointmentsByAgentsId
 );
 
 // POST /api/agent/create
@@ -48,11 +49,6 @@ router.put(
 );
 
 // DELETE /api/agent/:agentId
-router.delete(
-  "/delete-agent/:agentId",
-  accountMiddleware,
-
-  deleteAgent
-);
+router.delete("/delete-agent/:agentId", accountMiddleware, deleteAgent);
 
 module.exports = router;

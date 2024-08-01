@@ -20,6 +20,10 @@ const DiagnosticLabSchema = new mongoose.Schema({
   image: {
     type: String,
   },
+  isLabLogIn: {
+    type: Boolean,
+    default: false,
+  },
   testsOffered: [
     {
       type: mongoose.Schema.Types.ObjectId,

@@ -26,56 +26,6 @@ module.exports = mongoose.model("Agent", agentSchema);
 =======================================================================
 C:\ABS\Projects\pathology-server\model\appointment.js
 
-// const mongoose = require("mongoose");
-// const crypto = require("node:crypto");
-
-// const generateTicket = () => crypto.randomBytes(3).toString("hex");
-
-// const testSchema = new mongoose.Schema({
-//   test: { type: mongoose.Schema.Types.ObjectId, ref: "Test" },
-//   status: {
-//     type: String,
-//     enum: ["Pending", "In Progress", "Completed", "Closed"],
-//     default: "Pending",
-//   },
-// });
-
-// const labSchema = new mongoose.Schema({
-//   lab: { type: mongoose.Schema.Types.ObjectId, ref: "Lab", required: true },
-//   tests: [testSchema],
-// });
-
-// const appointmentSchema = new mongoose.Schema(
-//   {
-//     type: { type: String, required: true },
-//     age: { type: Number, required: true },
-//     gender: { type: String, required: true },
-//     problem: { type: String, required: true },
-//     problemDescription: { type: String },
-//     user: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
-//     labs: labSchema,
-//     status: {
-//       type: String,
-//       enum: ["Pending", "Approve", "Reject"],
-//       default: "Pending",
-//     },
-//     appointmentDate: { type: Date, required: true },
-//     ticket: { type: String, default: generateTicket },
-//     createdBy: {
-//       type: mongoose.Schema.Types.ObjectId,
-//       refPath: "createdByModel",
-//     },
-//     createdByModel: {
-//       type: String,
-//       enum: ["User", "Agent", "Franchise", "SuperAdmin"],
-//     },
-//   },
-//   { timestamps: true }
-// );
-
-// const Appointment = mongoose.model("Appointment", appointmentSchema);
-// module.exports = Appointment;
-//===========================================
 const mongoose = require("mongoose");
 const crypto = require("node:crypto");
 
@@ -114,7 +64,10 @@ const appointmentSchema = new mongoose.Schema(
     gender: { type: String, required: true },
     problem: { type: String, required: true },
     problemDescription: { type: String },
-    user: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+    referral: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Agent",
+    },
     labs: labSchema,
     status: {
       type: String,
@@ -139,6 +92,12 @@ const appointmentSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+appointmentSchema.virtual("hasTestsInProgress").get(function () {
+  return this.labs.some((lab) =>
+    lab.tests.some((test) => test.status === "In Progress")
+  );
+});
+
 const Appointment = mongoose.model("Appointment", appointmentSchema);
 module.exports = Appointment;
 
@@ -157,11 +116,9 @@ const DiagnosticLabSchema = new mongoose.Schema({
     required: true,
   },
   address: {
-    location: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Location",
-      required: true,
-    },
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Location",
+    required: true,
   },
   contactNumber: {
     type: String,
@@ -169,6 +126,10 @@ const DiagnosticLabSchema = new mongoose.Schema({
   },
   image: {
     type: String,
+  },
+  isLabLogIn: {
+    type: Boolean,
+    default: false,
   },
   testsOffered: [
     {
@@ -222,10 +183,6 @@ const franchiseSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
-    address: {
-      type: String,
-      required: true,
-    },
     contactNumber: {
       type: String,
       required: true,
@@ -237,7 +194,6 @@ const franchiseSchema = new mongoose.Schema(
     },
     password: {
       type: String,
-      required: true,
     },
     location: {
       type: mongoose.Schema.Types.ObjectId,
@@ -248,7 +204,6 @@ const franchiseSchema = new mongoose.Schema(
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
-      required: true,
     },
     lastLogin: { type: Date },
     lastLogout: { type: Date },
@@ -268,9 +223,10 @@ const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
 
 const locationSchema = new Schema({
-  name: { type: String, required: true },
-  address: { type: String, required: true },
-  pinCode: { type: String, required: true },
+  address: { type: String },
+  city: { type: String },
+  state: { type: String },
+  pinCode: { type: String },
 });
 
 module.exports = mongoose.model("Location", locationSchema);

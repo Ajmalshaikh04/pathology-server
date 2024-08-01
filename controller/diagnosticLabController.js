@@ -4,7 +4,7 @@ const Location = require("../model/location");
 const APIFeatures = require("../helper/apifeature");
 
 const createDiagnosticLab = async (req, res) => {
-  const { name, address, contactNumber, image, imageSrc } = req.body;
+  const { name, address, contactNumber, image } = req.body;
 
   try {
     const newLocation = new Location({
@@ -21,7 +21,6 @@ const createDiagnosticLab = async (req, res) => {
       address: savedLocation._id,
       contactNumber,
       image,
-      imageSrc,
     });
 
     const savedLab = await newLab.save();

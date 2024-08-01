@@ -193,3 +193,61 @@ exports.getAgentsByPincode = async (req, res) => {
     res.status(500).json({ success: false, message: "Server error" });
   }
 };
+
+exports.getAppointmentsByAgentsId = async (req, res) => {
+  try {
+    const { agentId } = req.params;
+    // Create a base query
+    const baseQuery = Appointment.find({ referral: agentId })
+      .populate({
+        path: "labs.lab",
+        model: "DiagnosticLab",
+      })
+      .populate({
+        path: "labs.tests.test",
+        model: "DiagnosticTest",
+      })
+      .populate({
+        path: "labs.tests.updatedBy",
+        model: "User",
+      })
+      .populate({
+        path: "createdBy",
+      });
+
+    // Create a new instance of APIFeatures
+    const features = new APIFeatures(baseQuery, req.query)
+      .search()
+      .filter()
+      .sort()
+      .limitFields();
+
+    // Extract pagination info from query
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20;
+    const skip = (page - 1) * limit;
+
+    // Execute the query with pagination
+    const appointments = await features.query.skip(skip).limit(limit);
+
+    // Get total count for pagination info
+    const totalAppointments = await Appointment.countDocuments({
+      referral: agentId,
+    });
+
+    res.status(200).json({
+      success: true,
+      results: appointments.length,
+      totalAppointments,
+      data: appointments,
+      pagination: {
+        currentPage: page,
+        limit: limit,
+        totalPages: Math.ceil(totalAppointments / limit),
+      },
+    });
+  } catch (error) {
+    console.error("Error fetching appointments by agent ID:", error);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+};
