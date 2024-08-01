@@ -24,6 +24,9 @@ const DiagnosticLabSchema = new mongoose.Schema({
     type: Boolean,
     default: false,
   },
+  password: {
+    type: String,
+  },
   testsOffered: [
     {
       type: mongoose.Schema.Types.ObjectId,

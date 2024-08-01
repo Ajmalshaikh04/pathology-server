@@ -114,7 +114,7 @@ const createAppointment = async (req, res) => {
 
     // Set createdByModel based on role
     const createdByModel =
-      req.role === "superAdmin"
+      req.role === "superAdmin" || "councilor"
         ? "User"
         : req.role.charAt(0).toUpperCase() + req.role.slice(1);
 
