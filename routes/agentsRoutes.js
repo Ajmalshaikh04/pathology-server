@@ -10,6 +10,7 @@ const {
   updateAgent,
   deleteAgent,
   getAppointmentsByAgentsId,
+  getAgentsByFranchiseId,
 } = require("../controller/agentController");
 const { accountMiddleware } = require("../middleware/accoundvalidate");
 
@@ -24,8 +25,8 @@ router.get(
   getAppointmentsForAgent
 );
 
-// GET /api/agents/location/:franchiseLocationId/:agentLocationId
-router.get("/location/:pincode", accountMiddleware, getAgentsByPincode);
+router.get("/agents/:franchiseId", accountMiddleware, getAgentsByFranchiseId);
+
 router.get(
   "/appointments/:agentId",
   accountMiddleware,

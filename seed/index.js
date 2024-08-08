@@ -1,1033 +1,912 @@
-// const mongoose = require("mongoose");
-// const crypto = require("node:crypto");
-// const bcrypt = require("bcrypt");
-
-// // Import your models
-// const Location = require("../model/location");
-// const Franchise = require("../model/franchise");
-// const Agent = require("../model/agents");
-// const User = require("../model/userModel");
-// const DiagnosticTest = require("../model/diagnosticTest");
-// const DiagnosticLab = require("../model/diagnosticLabs");
-// const Appointment = require("../model/appointment");
-
-// // Helper function to generate ticket
-// const generateTicket = () => crypto.randomBytes(3).toString("hex");
-
-// // Helper function to hash password
-// const hashPassword = async (password) => {
-//   const saltRounds = 10;
-//   return await bcrypt.hash(password, saltRounds);
-// };
-
-// // ... (keep the existing imports and helper functions)
-
-// const seedData = async () => {
-//   const hashedPassword = await hashPassword("12345");
-
-//   // Locations
-//   const locations = [
-//     {
-//       _id: new mongoose.Types.ObjectId(),
-//       address: "123 Main St",
-//       city: "New York",
-//       state: "NY",
-//       pinCode: "12345",
-//     },
-//     {
-//       _id: new mongoose.Types.ObjectId(),
-//       address: "456 Oak Ave",
-//       city: "Los Angeles",
-//       state: "CA",
-//       pinCode: "67890",
-//     },
-//     {
-//       _id: new mongoose.Types.ObjectId(),
-//       address: "789 Elm St",
-//       city: "Chicago",
-//       state: "IL",
-//       pinCode: "13579",
-//     },
-//     {
-//       _id: new mongoose.Types.ObjectId(),
-//       address: "321 Pine Rd",
-//       city: "Houston",
-//       state: "TX",
-//       pinCode: "24680",
-//     },
-//     {
-//       _id: new mongoose.Types.ObjectId(),
-//       address: "159 River Ln",
-//       city: "Phoenix",
-//       state: "AZ",
-//       pinCode: "35791",
-//     },
-//     {
-//       _id: new mongoose.Types.ObjectId(),
-//       address: "753 Hill Rd",
-//       city: "Philadelphia",
-//       state: "PA",
-//       pinCode: "86420",
-//     },
-//   ];
-
-//   // Users (including superAdmin, regular users, and counselors)
-//   const users = [
-//     {
-//       _id: new mongoose.Types.ObjectId(),
-//       name: "Admin User",
-//       mobile: "9999999999",
-//       email: "admin@example.com",
-//       password: hashedPassword,
-//       otp: "111111",
-//       role: "superAdmin",
-//     },
-//     {
-//       _id: new mongoose.Types.ObjectId(),
-//       name: "Alice Johnson",
-//       mobile: "9988776655",
-//       email: "alice@example.com",
-//       password: hashedPassword,
-//       otp: "123456",
-//       role: "user",
-//     },
-//     {
-//       _id: new mongoose.Types.ObjectId(),
-//       name: "Bob Williams",
-//       mobile: "8877665544",
-//       email: "bob@example.com",
-//       password: hashedPassword,
-//       otp: "654321",
-//       role: "user",
-//     },
-//     {
-//       _id: new mongoose.Types.ObjectId(),
-//       name: "Carol Brown",
-//       mobile: "7766554433",
-//       email: "carol@example.com",
-//       password: hashedPassword,
-//       otp: "987654",
-//       role: "user",
-//     },
-//     {
-//       _id: new mongoose.Types.ObjectId(),
-//       name: "David Green",
-//       mobile: "6655443322",
-//       email: "david@example.com",
-//       password: hashedPassword,
-//       otp: "456789",
-//       role: "user",
-//     },
-//     {
-//       _id: new mongoose.Types.ObjectId(),
-//       name: "Eva White",
-//       mobile: "5544332211",
-//       email: "eva@example.com",
-//       password: hashedPassword,
-//       otp: "135790",
-//       role: "user",
-//     },
-//     {
-//       _id: new mongoose.Types.ObjectId(),
-//       name: "Frank Black",
-//       mobile: "4433221100",
-//       email: "frank@example.com",
-//       password: hashedPassword,
-//       otp: "246801",
-//       role: "user",
-//     },
-//     // Counselors
-//     {
-//       _id: new mongoose.Types.ObjectId(),
-//       name: "Grace Lee",
-//       mobile: "3322110099",
-//       email: "grace@example.com",
-//       password: hashedPassword,
-//       otp: "369258",
-//       role: "councilor",
-//     },
-//     {
-//       _id: new mongoose.Types.ObjectId(),
-//       name: "Henry Chen",
-//       mobile: "2211009988",
-//       email: "henry@example.com",
-//       password: hashedPassword,
-//       otp: "147258",
-//       role: "councilor",
-//     },
-//     {
-//       _id: new mongoose.Types.ObjectId(),
-//       name: "Irene Wong",
-//       mobile: "1100998877",
-//       email: "irene@example.com",
-//       password: hashedPassword,
-//       otp: "258369",
-//       role: "councilor",
-//     },
-//   ];
-
-//   // Franchises
-//   const franchises = [
-//     {
-//       _id: new mongoose.Types.ObjectId(),
-//       name: "HealthCare Express",
-//       address: "101 Health St",
-//       contactNumber: "1234567890",
-//       email: "hce@example.com",
-//       password: hashedPassword,
-//       location: locations[0]._id,
-//       createdBy: users[0]._id,
-//     },
-//     {
-//       _id: new mongoose.Types.ObjectId(),
-//       name: "MediQuick",
-//       address: "202 Care Ave",
-//       contactNumber: "9876543210",
-//       email: "mediquick@example.com",
-//       password: hashedPassword,
-//       location: locations[1]._id,
-//       createdBy: users[0]._id,
-//     },
-//     {
-//       _id: new mongoose.Types.ObjectId(),
-//       name: "Swift Diagnostics",
-//       address: "303 Test Blvd",
-//       contactNumber: "5556667777",
-//       email: "swift@example.com",
-//       password: hashedPassword,
-//       location: locations[2]._id,
-//       createdBy: users[0]._id,
-//     },
-//     {
-//       _id: new mongoose.Types.ObjectId(),
-//       name: "Metro Health",
-//       address: "404 Metro St",
-//       contactNumber: "1112223333",
-//       email: "metro@example.com",
-//       password: hashedPassword,
-//       location: locations[3]._id,
-//       createdBy: users[0]._id,
-//     },
-//     {
-//       _id: new mongoose.Types.ObjectId(),
-//       name: "River Valley Clinic",
-//       address: "505 Valley Rd",
-//       contactNumber: "4445556666",
-//       email: "river@example.com",
-//       password: hashedPassword,
-//       location: locations[4]._id,
-//       createdBy: users[0]._id,
-//     },
-//   ];
-
-//   // Agents
-//   const agents = [
-//     {
-//       _id: new mongoose.Types.ObjectId(),
-//       name: "John Doe",
-//       email: "john@example.com",
-//       contact: "1122334455",
-//       location: locations[0]._id,
-//       franchise: franchises[0]._id,
-//     },
-//     {
-//       _id: new mongoose.Types.ObjectId(),
-//       name: "Jane Smith",
-//       email: "jane@example.com",
-//       contact: "5544332211",
-//       location: locations[1]._id,
-//       franchise: franchises[1]._id,
-//     },
-//     {
-//       _id: new mongoose.Types.ObjectId(),
-//       name: "Mike Johnson",
-//       email: "mike@example.com",
-//       contact: "7788990011",
-//       location: locations[2]._id,
-//       franchise: franchises[2]._id,
-//     },
-//     {
-//       _id: new mongoose.Types.ObjectId(),
-//       name: "Sarah Brown",
-//       email: "sarah@example.com",
-//       contact: "3344556677",
-//       location: locations[3]._id,
-//       franchise: franchises[3]._id,
-//     },
-//     {
-//       _id: new mongoose.Types.ObjectId(),
-//       name: "Chris Lee",
-//       email: "chris@example.com",
-//       contact: "9900112233",
-//       location: locations[4]._id,
-//       franchise: franchises[4]._id,
-//     },
-//   ];
-
-//   // Diagnostic Tests
-//   const diagnosticTests = [
-//     {
-//       _id: new mongoose.Types.ObjectId(),
-//       name: "Complete Blood Count",
-//       description: "Measures various components of the blood",
-//       price: 50,
-//     },
-//     {
-//       _id: new mongoose.Types.ObjectId(),
-//       name: "Lipid Profile",
-//       description: "Measures cholesterol and triglycerides",
-//       price: 75,
-//     },
-//     {
-//       _id: new mongoose.Types.ObjectId(),
-//       name: "Thyroid Function Test",
-//       description: "Measures thyroid hormone levels",
-//       price: 100,
-//     },
-//     {
-//       _id: new mongoose.Types.ObjectId(),
-//       name: "Chest X-Ray",
-//       description: "Imaging of the chest area",
-//       price: 150,
-//     },
-//     {
-//       _id: new mongoose.Types.ObjectId(),
-//       name: "Urinalysis",
-//       description: "Analysis of urine composition",
-//       price: 40,
-//     },
-//     {
-//       _id: new mongoose.Types.ObjectId(),
-//       name: "Electrocardiogram (ECG)",
-//       description: "Recording of heart's electrical activity",
-//       price: 120,
-//     },
-//     {
-//       _id: new mongoose.Types.ObjectId(),
-//       name: "Hemoglobin A1C",
-//       description: "Measures average blood sugar levels",
-//       price: 80,
-//     },
-//   ];
-
-//   // Diagnostic Labs
-//   const diagnosticLabs = [
-//     {
-//       _id: new mongoose.Types.ObjectId(),
-//       userId: users[1]._id,
-//       name: "City Central Lab",
-//       address: locations[0]._id,
-//       contactNumber: "1112223333",
-//       testsOffered: [
-//         diagnosticTests[0]._id,
-//         diagnosticTests[1]._id,
-//         diagnosticTests[2]._id,
-//       ],
-//     },
-//     {
-//       _id: new mongoose.Types.ObjectId(),
-//       userId: users[2]._id,
-//       name: "Quick Diagnostics",
-//       address: locations[1]._id,
-//       contactNumber: "4445556666",
-//       testsOffered: [
-//         diagnosticTests[0]._id,
-//         diagnosticTests[3]._id,
-//         diagnosticTests[4]._id,
-//       ],
-//     },
-//     {
-//       _id: new mongoose.Types.ObjectId(),
-//       userId: users[3]._id,
-//       name: "HealthScan Center",
-//       address: locations[2]._id,
-//       contactNumber: "7778889999",
-//       testsOffered: [
-//         diagnosticTests[1]._id,
-//         diagnosticTests[2]._id,
-//         diagnosticTests[5]._id,
-//       ],
-//     },
-//     {
-//       _id: new mongoose.Types.ObjectId(),
-//       userId: users[4]._id,
-//       name: "Metro Medical Lab",
-//       address: locations[3]._id,
-//       contactNumber: "2223334444",
-//       testsOffered: [
-//         diagnosticTests[3]._id,
-//         diagnosticTests[4]._id,
-//         diagnosticTests[6]._id,
-//       ],
-//     },
-//     {
-//       _id: new mongoose.Types.ObjectId(),
-//       userId: users[5]._id,
-//       name: "River Valley Diagnostics",
-//       address: locations[4]._id,
-//       contactNumber: "5556667777",
-//       testsOffered: [
-//         diagnosticTests[0]._id,
-//         diagnosticTests[2]._id,
-//         diagnosticTests[5]._id,
-//       ],
-//     },
-//   ];
-
-//   // Appointments
-//   const appointments = [
-//     {
-//       _id: new mongoose.Types.ObjectId(),
-//       type: "Lab Test",
-//       age: 30,
-//       gender: "Female",
-//       problem: "Routine Checkup",
-//       problemDescription: "Annual health screening",
-//       user: users[1]._id,
-//       labs: {
-//         lab: diagnosticLabs[0]._id,
-//         tests: [
-//           { test: diagnosticTests[0]._id, status: "Pending" },
-//           { test: diagnosticTests[1]._id, status: "Pending" },
-//         ],
-//       },
-//       status: "Pending",
-//       appointmentDate: new Date("2024-08-01"),
-//       ticket: generateTicket(),
-//       createdBy: agents[0]._id,
-//       createdByModel: "Agent",
-//       assignedCounselor: users[7]._id, // Grace Lee
-//     },
-//     {
-//       _id: new mongoose.Types.ObjectId(),
-//       type: "Consultation",
-//       age: 45,
-//       gender: "Male",
-//       problem: "Persistent Cough",
-//       problemDescription: "Coughing for 2 weeks",
-//       user: users[2]._id,
-//       labs: {
-//         lab: diagnosticLabs[1]._id,
-//         tests: [{ test: diagnosticTests[3]._id, status: "Pending" }],
-//       },
-//       status: "Approve",
-//       appointmentDate: new Date("2024-07-25"),
-//       ticket: generateTicket(),
-//       createdBy: users[2]._id,
-//       createdByModel: "User",
-//       assignedCounselor: users[8]._id, // Henry Chen
-//     },
-//     {
-//       _id: new mongoose.Types.ObjectId(),
-//       type: "Lab Test",
-//       age: 55,
-//       gender: "Female",
-//       problem: "Thyroid Check",
-//       problemDescription: "Feeling fatigued and gaining weight",
-//       user: users[3]._id,
-//       labs: {
-//         lab: diagnosticLabs[2]._id,
-//         tests: [{ test: diagnosticTests[2]._id, status: "In Progress" }],
-//       },
-//       status: "Approve",
-//       appointmentDate: new Date("2024-07-30"),
-//       ticket: generateTicket(),
-//       createdBy: agents[2]._id,
-//       createdByModel: "Agent",
-//       assignedCounselor: users[9]._id, // Irene Wong
-//     },
-//     {
-//       _id: new mongoose.Types.ObjectId(),
-//       type: "Lab Test",
-//       age: 35,
-//       gender: "Male",
-//       problem: "Diabetes Screening",
-//       problemDescription: "Family history of diabetes",
-//       user: users[4]._id,
-//       labs: {
-//         lab: diagnosticLabs[3]._id,
-//         tests: [{ test: diagnosticTests[6]._id, status: "Pending" }],
-//       },
-//       status: "Pending",
-//       appointmentDate: new Date("2024-08-05"),
-//       ticket: generateTicket(),
-//       createdBy: agents[3]._id,
-//       createdByModel: "Agent",
-//       assignedCounselor: users[7]._id, // Grace Lee
-//     },
-//     {
-//       _id: new mongoose.Types.ObjectId(),
-//       type: "Consultation",
-//       age: 60,
-//       gender: "Male",
-//       problem: "Heart Palpitations",
-//       problemDescription: "Experiencing rapid heartbeat",
-//       user: users[5]._id,
-//       labs: {
-//         lab: diagnosticLabs[4]._id,
-//         tests: [{ test: diagnosticTests[5]._id, status: "Pending" }],
-//       },
-//       status: "Approve",
-//       appointmentDate: new Date("2024-08-10"),
-//       ticket: generateTicket(),
-//       createdBy: users[5]._id,
-//       createdByModel: "User",
-//       assignedCounselor: users[8]._id, // Henry Chen
-//     },
-//   ];
-
-//   try {
-//     // Clear existing data
-//     await Location.deleteMany({});
-//     await Franchise.deleteMany({});
-//     await Agent.deleteMany({});
-//     await User.deleteMany({});
-//     await DiagnosticTest.deleteMany({});
-//     await DiagnosticLab.deleteMany({});
-//     await Appointment.deleteMany({});
-
-//     // Insert new data
-//     await Location.insertMany(locations);
-//     await User.insertMany(users);
-//     await Franchise.insertMany(franchises);
-//     await Agent.insertMany(agents);
-//     await DiagnosticTest.insertMany(diagnosticTests);
-//     await DiagnosticLab.insertMany(diagnosticLabs);
-//     await Appointment.insertMany(appointments);
-
-//     console.log("Database seeded successfully");
-//   } catch (error) {
-//     console.error("Error seeding database:", error);
-//   }
-// };
-
-// // ... (keep the existing MongoDB connection and execution code)
-
-// // Connect to MongoDB and run the seed function
-// mongoose
-//   .connect(
-//     "mongodb+srv://shahzad201415:L6drIrBh0AYy97yN@cluster0.drcxrzd.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
-//   )
-//   .then(() => {
-//     console.log("Connected to MongoDB");
-//     return seedData();
-//   })
-//   .then(() => {
-//     console.log("Seeding completed");
-//     mongoose.connection.close();
-//   })
-//   .catch((error) => {
-//     console.error("Error:", error);
-//     mongoose.connection.close();
-//   });
-//====================================================
 const mongoose = require("mongoose");
 const bcrypt = require("bcrypt");
 const Location = require("../model/location");
 const Franchise = require("../model/franchise");
 const Agent = require("../model/agents");
-const User = require("../model/userModel");
 const DiagnosticTest = require("../model/diagnosticTest");
 const DiagnosticLab = require("../model/diagnosticLabs");
+const User = require("../model/userModel");
 const Appointment = require("../model/appointment");
-const crypto = require("node:crypto");
+const LabCategory = require("../model/labCategories");
+const Report = require("../model/report");
+console.log("Report model:", Report);
 
-const generateTicket = () => crypto.randomBytes(3).toString("hex");
+mongoose.connect(
+  "mongodb+srv://shahzad201415:L6drIrBh0AYy97yN@cluster0.drcxrzd.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
+);
 
-const hashPassword = async (password) => {
-  const salt = await bcrypt.genSalt(10);
-  const hashedPassword = await bcrypt.hash(password, salt);
-  return hashedPassword;
-};
+// Function to hash password
+async function hashPassword(password) {
+  const saltRounds = 10;
+  return await bcrypt.hash(password, saltRounds);
+}
 
-const seedData = async () => {
-  const hashedPassword = await hashPassword("12345");
+const locations = [
+  {
+    address: "123 MG Road",
+    city: "Mumbai",
+    state: "Maharashtra",
+    pinCode: "400001",
+  },
+  {
+    address: "456 Anna Salai",
+    city: "Chennai",
+    state: "Tamil Nadu",
+    pinCode: "600002",
+  },
+  {
+    address: "789 Brigade Road",
+    city: "Bengaluru",
+    state: "Karnataka",
+    pinCode: "560001",
+  },
+  {
+    address: "101 Jubilee Hills",
+    city: "Hyderabad",
+    state: "Telangana",
+    pinCode: "500033",
+  },
+  {
+    address: "202 Civil Lines",
+    city: "Delhi",
+    state: "Delhi",
+    pinCode: "110054",
+  },
+  {
+    address: "303 Park Street",
+    city: "Kolkata",
+    state: "West Bengal",
+    pinCode: "700016",
+  },
+  {
+    address: "404 FC Road",
+    city: "Pune",
+    state: "Maharashtra",
+    pinCode: "411005",
+  },
+  {
+    address: "505 Sardar Patel Road",
+    city: "Ahmedabad",
+    state: "Gujarat",
+    pinCode: "380015",
+  },
+  {
+    address: "606 MG Marg",
+    city: "Gangtok",
+    state: "Sikkim",
+    pinCode: "737101",
+  },
+  {
+    address: "707 Mall Road",
+    city: "Shimla",
+    state: "Himachal Pradesh",
+    pinCode: "171001",
+  },
+];
 
-  const locations = [
-    {
-      _id: new mongoose.Types.ObjectId(),
-      address: "123 Main St",
-      city: "New York",
-      state: "NY",
-      pinCode: "12345",
-    },
-    {
-      _id: new mongoose.Types.ObjectId(),
-      address: "456 Oak Ave",
-      city: "Los Angeles",
-      state: "CA",
-      pinCode: "67890",
-    },
-    {
-      _id: new mongoose.Types.ObjectId(),
-      address: "789 Elm St",
-      city: "Chicago",
-      state: "IL",
-      pinCode: "13579",
-    },
-    {
-      _id: new mongoose.Types.ObjectId(),
-      address: "321 Pine Rd",
-      city: "Houston",
-      state: "TX",
-      pinCode: "24680",
-    },
-    {
-      _id: new mongoose.Types.ObjectId(),
-      address: "159 River Ln",
-      city: "Phoenix",
-      state: "AZ",
-      pinCode: "35791",
-    },
-    {
-      _id: new mongoose.Types.ObjectId(),
-      address: "753 Hill Rd",
-      city: "Philadelphia",
-      state: "PA",
-      pinCode: "86420",
-    },
-  ];
+const franchises = [
+  {
+    name: "HealthFirst Franchise",
+    contactNumber: "+91 9876543210",
+    email: "healthfirst@example.com",
+    password: "hashedPassword1",
+    role: "franchise",
+  },
+  {
+    name: "MediCare Franchise",
+    contactNumber: "+91 9876543211",
+    email: "medicare@example.com",
+    password: "hashedPassword2",
+    role: "franchise",
+  },
+  {
+    name: "Wellness Hub",
+    contactNumber: "+91 9876543212",
+    email: "wellnesshub@example.com",
+    password: "hashedPassword3",
+    role: "franchise",
+  },
+  {
+    name: "CareConnect",
+    contactNumber: "+91 9876543213",
+    email: "careconnect@example.com",
+    password: "hashedPassword4",
+    role: "franchise",
+  },
+  {
+    name: "Health Harmony",
+    contactNumber: "+91 9876543214",
+    email: "healthharmony@example.com",
+    password: "hashedPassword5",
+    role: "franchise",
+  },
+  {
+    name: "Vitality Ventures",
+    contactNumber: "+91 9876543215",
+    email: "vitalityventures@example.com",
+    password: "hashedPassword6",
+    role: "franchise",
+  },
+  {
+    name: "MedLink Network",
+    contactNumber: "+91 9876543216",
+    email: "medlink@example.com",
+    password: "hashedPassword7",
+    role: "franchise",
+  },
+  {
+    name: "Cure Consortium",
+    contactNumber: "+91 9876543217",
+    email: "cureconsortium@example.com",
+    password: "hashedPassword8",
+    role: "franchise",
+  },
+  {
+    name: "Healing Hands",
+    contactNumber: "+91 9876543218",
+    email: "healinghands@example.com",
+    password: "hashedPassword9",
+    role: "franchise",
+  },
+  {
+    name: "Wellness Warriors",
+    contactNumber: "+91 9876543219",
+    email: "wellnesswarriors@example.com",
+    password: "hashedPassword10",
+    role: "franchise",
+  },
+];
 
-  const users = [
-    {
-      _id: new mongoose.Types.ObjectId(),
-      name: "Admin User",
-      mobile: "9999999999",
-      email: "admin@example.com",
-      password: hashedPassword,
-      otp: "111111",
-      role: "superAdmin",
-    },
-    {
-      _id: new mongoose.Types.ObjectId(),
-      name: "Alice Johnson",
-      mobile: "9988776655",
-      email: "alice@example.com",
-      password: hashedPassword,
-      otp: "123456",
-      role: "user",
-    },
-    {
-      _id: new mongoose.Types.ObjectId(),
-      name: "Bob Williams",
-      mobile: "8877665544",
-      email: "bob@example.com",
-      password: hashedPassword,
-      otp: "654321",
-      role: "user",
-    },
-    {
-      _id: new mongoose.Types.ObjectId(),
-      name: "Carol Brown",
-      mobile: "7766554433",
-      email: "carol@example.com",
-      password: hashedPassword,
-      otp: "987654",
-      role: "user",
-    },
-    {
-      _id: new mongoose.Types.ObjectId(),
-      name: "David Green",
-      mobile: "6655443322",
-      email: "david@example.com",
-      password: hashedPassword,
-      otp: "456789",
-      role: "user",
-    },
-    {
-      _id: new mongoose.Types.ObjectId(),
-      name: "Eva White",
-      mobile: "5544332211",
-      email: "eva@example.com",
-      password: hashedPassword,
-      otp: "135790",
-      role: "user",
-    },
-    {
-      _id: new mongoose.Types.ObjectId(),
-      name: "Frank Black",
-      mobile: "4433221100",
-      email: "frank@example.com",
-      password: hashedPassword,
-      otp: "246801",
-      role: "user",
-    },
-    {
-      _id: new mongoose.Types.ObjectId(),
-      name: "Grace Lee",
-      mobile: "3322110099",
-      email: "grace@example.com",
-      password: hashedPassword,
-      otp: "369258",
-      role: "councilor",
-    },
-    {
-      _id: new mongoose.Types.ObjectId(),
-      name: "Henry Chen",
-      mobile: "2211009988",
-      email: "henry@example.com",
-      password: hashedPassword,
-      otp: "147258",
-      role: "councilor",
-    },
-    {
-      _id: new mongoose.Types.ObjectId(),
-      name: "Irene Wong",
-      mobile: "1100998877",
-      email: "irene@example.com",
-      password: hashedPassword,
-      otp: "258369",
-      role: "councilor",
-    },
-  ];
+const agents = [
+  {
+    name: "Rajesh Kumar",
+    email: "rajesh@example.com",
+    password: "hashedPassword11",
+    contact: "+91 9876543220",
+    role: "agent",
+  },
+  {
+    name: "Priya Sharma",
+    email: "priya@example.com",
+    password: "hashedPassword12",
+    contact: "+91 9876543221",
+    role: "agent",
+  },
+  {
+    name: "Amit Patel",
+    email: "amit@example.com",
+    password: "hashedPassword13",
+    contact: "+91 9876543222",
+    role: "agent",
+  },
+  {
+    name: "Sneha Reddy",
+    email: "sneha@example.com",
+    password: "hashedPassword14",
+    contact: "+91 9876543223",
+    role: "agent",
+  },
+  {
+    name: "Vikram Singh",
+    email: "vikram@example.com",
+    password: "hashedPassword15",
+    contact: "+91 9876543224",
+    role: "agent",
+  },
+  {
+    name: "Neha Gupta",
+    email: "neha@example.com",
+    password: "hashedPassword16",
+    contact: "+91 9876543225",
+    role: "agent",
+  },
+  {
+    name: "Rahul Verma",
+    email: "rahul@example.com",
+    password: "hashedPassword17",
+    contact: "+91 9876543226",
+    role: "agent",
+  },
+  {
+    name: "Anjali Desai",
+    email: "anjali@example.com",
+    password: "hashedPassword18",
+    contact: "+91 9876543227",
+    role: "agent",
+  },
+  {
+    name: "Sanjay Joshi",
+    email: "sanjay@example.com",
+    password: "hashedPassword19",
+    contact: "+91 9876543228",
+    role: "agent",
+  },
+  {
+    name: "Meera Kapoor",
+    email: "meera@example.com",
+    password: "hashedPassword20",
+    contact: "+91 9876543229",
+    role: "agent",
+  },
+];
 
-  const franchises = [
-    {
-      _id: new mongoose.Types.ObjectId(),
-      name: "HealthCare Express",
-      address: "101 Health St",
-      contactNumber: "1234567890",
-      email: "hce@example.com",
-      password: hashedPassword,
-      location: locations[0]._id,
-      createdBy: users[0]._id,
-    },
-    {
-      _id: new mongoose.Types.ObjectId(),
-      name: "MediQuick",
-      address: "202 Care Ave",
-      contactNumber: "9876543210",
-      email: "mediquick@example.com",
-      password: hashedPassword,
-      location: locations[1]._id,
-      createdBy: users[0]._id,
-    },
-    {
-      _id: new mongoose.Types.ObjectId(),
-      name: "Swift Diagnostics",
-      address: "303 Test Blvd",
-      contactNumber: "5556667777",
-      email: "swift@example.com",
-      password: hashedPassword,
-      location: locations[2]._id,
-      createdBy: users[0]._id,
-    },
-    {
-      _id: new mongoose.Types.ObjectId(),
-      name: "Metro Health",
-      address: "404 Metro St",
-      contactNumber: "1112223333",
-      email: "metro@example.com",
-      password: hashedPassword,
-      location: locations[3]._id,
-      createdBy: users[0]._id,
-    },
-    {
-      _id: new mongoose.Types.ObjectId(),
-      name: "River Valley Clinic",
-      address: "505 Valley Rd",
-      contactNumber: "4445556666",
-      email: "river@example.com",
-      password: hashedPassword,
-      location: locations[4]._id,
-      createdBy: users[0]._id,
-    },
-  ];
+const labCategories = [
+  {
+    name: "Hematology",
+    image: "https://example.com/images/hematology.jpg",
+  },
+  {
+    name: "Biochemistry",
+    image: "https://example.com/images/biochemistry.jpg",
+  },
+  {
+    name: "Microbiology",
+    image: "https://example.com/images/microbiology.jpg",
+  },
+  {
+    name: "Immunology",
+    image: "https://example.com/images/immunology.jpg",
+  },
+  {
+    name: "Pathology",
+    image: "https://example.com/images/pathology.jpg",
+  },
+  {
+    name: "Genetics",
+    image: "https://example.com/images/genetics.jpg",
+  },
+  {
+    name: "Toxicology",
+    image: "https://example.com/images/toxicology.jpg",
+  },
+  {
+    name: "Endocrinology",
+    image: "https://example.com/images/endocrinology.jpg",
+  },
+  {
+    name: "Oncology",
+    image: "https://example.com/images/oncology.jpg",
+  },
+  {
+    name: "Nephrology",
+    image: "https://example.com/images/nephrology.jpg",
+  },
+];
 
-  const agents = [
-    {
-      _id: new mongoose.Types.ObjectId(),
-      name: "John Doe",
-      email: "john@example.com",
-      contact: "1122334455",
-      location: locations[0]._id,
-      franchise: franchises[0]._id,
-    },
-    {
-      _id: new mongoose.Types.ObjectId(),
-      name: "Jane Smith",
-      email: "jane@example.com",
-      contact: "5544332211",
-      location: locations[1]._id,
-      franchise: franchises[1]._id,
-    },
-    {
-      _id: new mongoose.Types.ObjectId(),
-      name: "Mike Johnson",
-      email: "mike@example.com",
-      contact: "7788990011",
-      location: locations[2]._id,
-      franchise: franchises[2]._id,
-    },
-    {
-      _id: new mongoose.Types.ObjectId(),
-      name: "Sarah Brown",
-      email: "sarah@example.com",
-      contact: "3344556677",
-      location: locations[3]._id,
-      franchise: franchises[3]._id,
-    },
-    {
-      _id: new mongoose.Types.ObjectId(),
-      name: "Chris Lee",
-      email: "chris@example.com",
-      contact: "9900112233",
-      location: locations[4]._id,
-      franchise: franchises[4]._id,
-    },
-  ];
+const diagnosticTests = [
+  {
+    description:
+      "Complete Blood Count (CBC) test to measure various components of blood.",
+    price: 500,
+    labCategory: null, // Will be updated later
+  },
+  {
+    description:
+      "Lipid profile test to measure cholesterol levels and triglycerides.",
+    price: 800,
+    labCategory: null, // Will be updated later
+  },
+  {
+    description:
+      "Basic Metabolic Panel (BMP) to assess blood glucose, calcium, and electrolytes.",
+    price: 600,
+    labCategory: null, // Will be updated later
+  },
+  {
+    description:
+      "Comprehensive Metabolic Panel (CMP) to evaluate blood glucose, calcium, electrolytes, and liver function.",
+    price: 700,
+    labCategory: null, // Will be updated later
+  },
+  {
+    description:
+      "Thyroid Stimulating Hormone (TSH) test to measure thyroid function.",
+    price: 400,
+    labCategory: null, // Will be updated later
+  },
+  {
+    description:
+      "Hemoglobin A1c test to monitor average blood glucose levels over the past 2-3 months.",
+    price: 550,
+    labCategory: null, // Will be updated later
+  },
+  {
+    description:
+      "Liver Function Test (LFT) to evaluate liver health and function.",
+    price: 650,
+    labCategory: null, // Will be updated later
+  },
+  {
+    description:
+      "Kidney Function Test (KFT) to assess kidney health and function.",
+    price: 600,
+    labCategory: null, // Will be updated later
+  },
+  {
+    description:
+      "Urinalysis to check for signs of urinary tract infection or other kidney issues.",
+    price: 300,
+    labCategory: null, // Will be updated later
+  },
+  {
+    description: "Vitamin D test to measure vitamin D levels in the blood.",
+    price: 500,
+    labCategory: null, // Will be updated later
+  },
+  {
+    description:
+      "Prostate-Specific Antigen (PSA) test to screen for prostate abnormalities.",
+    price: 700,
+    labCategory: null, // Will be updated later
+  },
+  {
+    description:
+      "Hematocrit test to measure the proportion of red blood cells in the blood.",
+    price: 350,
+    labCategory: null, // Will be updated later
+  },
+  {
+    description:
+      "Erythrocyte Sedimentation Rate (ESR) test to detect inflammation in the body.",
+    price: 400,
+    labCategory: null, // Will be updated later
+  },
+  {
+    description:
+      "Blood Culture test to detect bacterial infections in the blood.",
+    price: 800,
+    labCategory: null, // Will be updated later
+  },
+  {
+    description:
+      "Pregnancy test to detect the presence of human chorionic gonadotropin (hCG) hormone.",
+    price: 250,
+    labCategory: null, // Will be updated later
+  },
+  {
+    description:
+      "Lactate Dehydrogenase (LDH) test to measure levels of LDH enzyme in the blood.",
+    price: 450,
+    labCategory: null, // Will be updated later
+  },
+  {
+    description:
+      "C-Reactive Protein (CRP) test to detect inflammation or infection.",
+    price: 500,
+    labCategory: null, // Will be updated later
+  },
+  {
+    description:
+      "B-type Natriuretic Peptide (BNP) test to assess heart failure.",
+    price: 750,
+    labCategory: null, // Will be updated later
+  },
+  {
+    description: "Ferritin test to measure iron stores in the body.",
+    price: 550,
+    labCategory: null, // Will be updated later
+  },
+  {
+    description:
+      "Antibody Panel test to detect specific antibodies in the blood.",
+    price: 600,
+    labCategory: null, // Will be updated later
+  },
+];
 
-  const diagnosticTests = [
-    {
-      _id: new mongoose.Types.ObjectId(),
-      name: "Complete Blood Count",
-      description: "Measures various components of the blood",
-      price: 50,
-    },
-    {
-      _id: new mongoose.Types.ObjectId(),
-      name: "Lipid Profile",
-      description: "Measures cholesterol and triglycerides",
-      price: 75,
-    },
-    {
-      _id: new mongoose.Types.ObjectId(),
-      name: "Thyroid Function Test",
-      description: "Measures thyroid hormone levels",
-      price: 100,
-    },
-    {
-      _id: new mongoose.Types.ObjectId(),
-      name: "Chest X-Ray",
-      description: "Imaging of the chest area",
-      price: 150,
-    },
-    {
-      _id: new mongoose.Types.ObjectId(),
-      name: "Urinalysis",
-      description: "Analysis of urine composition",
-      price: 40,
-    },
-    {
-      _id: new mongoose.Types.ObjectId(),
-      name: "Electrocardiogram (ECG)",
-      description: "Recording of heart's electrical activity",
-      price: 120,
-    },
-    {
-      _id: new mongoose.Types.ObjectId(),
-      name: "Hemoglobin A1C",
-      description: "Measures average blood sugar levels",
-      price: 80,
-    },
-  ];
+const diagnosticLabs = [
+  {
+    name: "City Health Lab",
+    email: "cityhealthlab@example.com",
+    contactNumber: "+91 9876543230",
+    password: "hashedPassword21",
+    role: "lab",
+  },
+  {
+    name: "Metro Diagnostics",
+    email: "metrodiagnostics@example.com",
+    contactNumber: "+91 9876543231",
+    password: "hashedPassword22",
+    role: "lab",
+  },
+  {
+    name: "LifeCare Labs",
+    email: "lifecarelabs@example.com",
+    contactNumber: "+91 9876543232",
+    password: "hashedPassword23",
+    role: "lab",
+  },
+  {
+    name: "Wellness Diagnostics",
+    email: "wellnessdiag@example.com",
+    contactNumber: "+91 9876543233",
+    password: "hashedPassword24",
+    role: "lab",
+  },
+  {
+    name: "Prime Path Lab",
+    email: "primepath@example.com",
+    contactNumber: "+91 9876543234",
+    password: "hashedPassword25",
+    role: "lab",
+  },
+  {
+    name: "Healthway Diagnostics",
+    email: "healthwaydiag@example.com",
+    contactNumber: "+91 9876543235",
+    password: "hashedPassword26",
+    role: "lab",
+  },
+  {
+    name: "Medlife Labs",
+    email: "medlifelabs@example.com",
+    contactNumber: "+91 9876543236",
+    password: "hashedPassword27",
+    role: "lab",
+  },
+  {
+    name: "Accurate Diagnostics",
+    email: "accuratediag@example.com",
+    contactNumber: "+91 9876543237",
+    password: "hashedPassword28",
+    role: "lab",
+  },
+  {
+    name: "QuickTest Labs",
+    email: "quicktest@example.com",
+    contactNumber: "+91 9876543238",
+    password: "hashedPassword29",
+    role: "lab",
+  },
+  {
+    name: "Care & Cure Diagnostics",
+    email: "carecurediag@example.com",
+    contactNumber: "+91 9876543239",
+    password: "hashedPassword30",
+    role: "lab",
+  },
+];
 
-  const diagnosticLabs = [
-    {
-      _id: new mongoose.Types.ObjectId(),
-      userId: users[1]._id,
-      name: "City Central Lab",
-      address: locations[0]._id,
-      contactNumber: "1112223333",
-      testsOffered: [
-        diagnosticTests[0]._id,
-        diagnosticTests[1]._id,
-        diagnosticTests[2]._id,
-      ],
-    },
-    {
-      _id: new mongoose.Types.ObjectId(),
-      userId: users[2]._id,
-      name: "Downtown Diagnostics",
-      address: locations[1]._id,
-      contactNumber: "2223334444",
-      testsOffered: [
-        diagnosticTests[3]._id,
-        diagnosticTests[4]._id,
-        diagnosticTests[5]._id,
-      ],
-    },
-    {
-      _id: new mongoose.Types.ObjectId(),
-      userId: users[3]._id,
-      name: "HealthFirst Lab",
-      address: locations[2]._id,
-      contactNumber: "3334445555",
-      testsOffered: [
-        diagnosticTests[1]._id,
-        diagnosticTests[2]._id,
-        diagnosticTests[6]._id,
-      ],
-    },
-    {
-      _id: new mongoose.Types.ObjectId(),
-      userId: users[4]._id,
-      name: "Precision Diagnostics",
-      address: locations[3]._id,
-      contactNumber: "4445556666",
-      testsOffered: [
-        diagnosticTests[0]._id,
-        diagnosticTests[3]._id,
-        diagnosticTests[4]._id,
-      ],
-    },
-    {
-      _id: new mongoose.Types.ObjectId(),
-      userId: users[5]._id,
-      name: "RapidResults Lab",
-      address: locations[4]._id,
-      contactNumber: "5556667777",
-      testsOffered: [
-        diagnosticTests[2]._id,
-        diagnosticTests[5]._id,
-        diagnosticTests[6]._id,
-      ],
-    },
-  ];
+const users = [
+  {
+    name: "Aarav Gupta",
+    mobile: "+91 9876543240",
+    email: "aarav@example.com",
+    password: "hashedPassword31",
+    otp: "123456",
+    role: "user",
+  },
+  {
+    name: "Diya Patel",
+    mobile: "+91 9876543241",
+    email: "diya@example.com",
+    password: "hashedPassword32",
+    otp: "234567",
+    role: "councilor",
+  },
+  {
+    name: "Arjun Sharma",
+    mobile: "+91 9876543242",
+    email: "arjun@example.com",
+    password: "hashedPassword33",
+    otp: "345678",
+    role: "superAdmin",
+  },
+  {
+    name: "Ananya Singh",
+    mobile: "+91 9876543243",
+    email: "ananya@example.com",
+    password: "hashedPassword34",
+    otp: "456789",
+    role: "user",
+  },
+  {
+    name: "Rohan Kapoor",
+    mobile: "+91 9876543244",
+    email: "rohan@example.com",
+    password: "hashedPassword35",
+    otp: "567890",
+    role: "councilor",
+  },
+  {
+    name: "Ishaan Mehta",
+    mobile: "+91 9876543245",
+    email: "ishaan@example.com",
+    password: "hashedPassword36",
+    otp: "678901",
+    role: "user",
+  },
+  {
+    name: "Zara Khan",
+    mobile: "+91 9876543246",
+    email: "zara@example.com",
+    password: "hashedPassword37",
+    otp: "789012",
+    role: "user",
+  },
+  {
+    name: "Riya Desai",
+    mobile: "+91 9876543247",
+    email: "riya@example.com",
+    password: "hashedPassword38",
+    otp: "890123",
+    role: "councilor",
+  },
+  {
+    name: "Vihaan Reddy",
+    mobile: "+91 9876543248",
+    email: "vihaan@example.com",
+    password: "hashedPassword39",
+    otp: "901234",
+    role: "user",
+  },
+  {
+    name: "Myra Joshi",
+    mobile: "+91 9876543249",
+    email: "myra@example.com",
+    password: "hashedPassword40",
+    otp: "012345",
+    role: "superAdmin",
+  },
+];
 
-  const appointments = [
-    {
-      _id: new mongoose.Types.ObjectId(),
-      type: "Lab Test",
-      age: 30,
-      gender: "Female",
-      problem: "Routine Checkup",
-      problemDescription: "Annual health screening",
-      referral: agents[0]._id,
-      labs: {
-        lab: diagnosticLabs[0]._id,
-        tests: [
-          { test: diagnosticTests[0]._id, status: "Pending" },
-          { test: diagnosticTests[1]._id, status: "Pending" },
-        ],
-      },
-      status: "Pending",
-      appointmentDate: new Date("2024-08-01"),
-      ticket: generateTicket(),
-      createdBy: users[1]._id,
-      createdByModel: "User",
-    },
-    {
-      _id: new mongoose.Types.ObjectId(),
-      type: "Lab Test",
-      age: 45,
-      gender: "Male",
-      problem: "Chest Pain",
-      problemDescription: "Intermittent chest pain",
-      referral: agents[1]._id,
-      labs: {
-        lab: diagnosticLabs[1]._id,
-        tests: [
-          { test: diagnosticTests[3]._id, status: "Pending" },
-          { test: diagnosticTests[4]._id, status: "Pending" },
-        ],
-      },
-      status: "Pending",
-      appointmentDate: new Date("2024-08-02"),
-      ticket: generateTicket(),
-      createdBy: agents[1]._id,
-      createdByModel: "Agent",
-    },
-    {
-      _id: new mongoose.Types.ObjectId(),
-      type: "Lab Test",
-      age: 60,
-      gender: "Female",
-      problem: "Diabetes Management",
-      problemDescription: "Monitoring blood sugar levels",
-      referral: agents[2]._id,
-      labs: {
-        lab: diagnosticLabs[2]._id,
-        tests: [
-          { test: diagnosticTests[6]._id, status: "Pending" },
-          { test: diagnosticTests[5]._id, status: "Pending" },
-        ],
-      },
-      status: "Pending",
-      appointmentDate: new Date("2024-08-03"),
-      ticket: generateTicket(),
-      createdBy: users[2]._id,
-      createdByModel: "User",
-    },
-    {
-      _id: new mongoose.Types.ObjectId(),
-      type: "Lab Test",
-      age: 50,
-      gender: "Male",
-      problem: "Thyroid Checkup",
-      problemDescription: "Routine thyroid function test",
-      referral: agents[3]._id,
-      labs: {
-        lab: diagnosticLabs[3]._id,
-        tests: [
-          { test: diagnosticTests[2]._id, status: "Pending" },
-          { test: diagnosticTests[0]._id, status: "Pending" },
-        ],
-      },
-      status: "Pending",
-      appointmentDate: new Date("2024-08-04"),
-      ticket: generateTicket(),
-      createdBy: agents[3]._id,
-      createdByModel: "Agent",
-    },
-    {
-      _id: new mongoose.Types.ObjectId(),
-      type: "Lab Test",
-      age: 35,
-      gender: "Female",
-      problem: "Heart Health Checkup",
-      problemDescription: "Routine ECG and blood test",
-      referral: agents[4]._id,
-      labs: {
-        lab: diagnosticLabs[4]._id,
-        tests: [
-          { test: diagnosticTests[5]._id, status: "Pending" },
-          { test: diagnosticTests[1]._id, status: "Pending" },
-        ],
-      },
-      status: "Pending",
-      appointmentDate: new Date("2024-08-05"),
-      ticket: generateTicket(),
-      createdBy: users[3]._id,
-      createdByModel: "User",
-    },
-  ];
+const appointments = [
+  {
+    type: "Lab Test",
+    age: 35,
+    gender: "Male",
+    problem: "Annual Health Checkup",
+    problemDescription: "Routine health checkup",
+    status: "Pending",
+    appointmentDate: new Date("2024-08-15"),
+    commission: { superAdminToFranchise: 15, superAdminToAgent: 10 },
+    updatedBy: null,
+    updatedByModel: null,
+  },
+  {
+    type: "Lab Test",
+    age: 28,
+    gender: "Female",
+    problem: "Thyroid Check",
+    problemDescription: "Experiencing fatigue and weight gain",
+    status: "Approve",
+    appointmentDate: new Date("2024-08-20"),
+    commission: { superAdminToFranchise: 18, superAdminToAgent: 12 },
+    updatedBy: null,
+    updatedByModel: null,
+  },
+  {
+    type: "Lab Test",
+    age: 45,
+    gender: "Male",
+    problem: "Diabetes Screening",
+    problemDescription: "Family history of diabetes",
+    status: "Approve",
+    appointmentDate: new Date("2024-08-25"),
+    commission: { superAdminToFranchise: 20, superAdminToAgent: 15 },
+    updatedBy: null,
+    updatedByModel: null,
+  },
+  {
+    type: "Lab Test",
+    age: 52,
+    gender: "Female",
+    problem: "Liver Function",
+    problemDescription: "Occasional abdominal pain",
+    status: "Pending",
+    appointmentDate: new Date("2024-09-01"),
+    commission: { superAdminToFranchise: 17, superAdminToAgent: 11 },
+    updatedBy: null,
+    updatedByModel: null,
+  },
+  {
+    type: "Lab Test",
+    age: 60,
+    gender: "Male",
+    problem: "Kidney Function",
+    problemDescription: "Routine checkup for senior citizen",
+    status: "Approve",
+    appointmentDate: new Date("2024-09-05"),
+    commission: { superAdminToFranchise: 19, superAdminToAgent: 13 },
+    updatedBy: null,
+    updatedByModel: null,
+  },
+  {
+    type: "Lab Test",
+    age: 30,
+    gender: "Female",
+    problem: "Vitamin D Deficiency",
+    problemDescription: "Feeling fatigued and weak",
+    status: "Approve",
+    appointmentDate: new Date("2024-09-10"),
+    commission: { superAdminToFranchise: 16, superAdminToAgent: 10 },
+    updatedBy: null,
+    updatedByModel: null,
+  },
+  {
+    type: "Lab Test",
+    age: 40,
+    gender: "Male",
+    problem: "Iron Deficiency",
+    problemDescription: "Pale skin and shortness of breath",
+    status: "Pending",
+    appointmentDate: new Date("2024-09-15"),
+    commission: { superAdminToFranchise: 18, superAdminToAgent: 12 },
+    updatedBy: null,
+    updatedByModel: null,
+  },
+  {
+    type: "Lab Test",
+    age: 25,
+    gender: "Female",
+    problem: "Allergy Test",
+    problemDescription: "Frequent sneezing and rashes",
+    status: "Approve",
+    appointmentDate: new Date("2024-09-20"),
+    commission: { superAdminToFranchise: 20, superAdminToAgent: 14 },
+    updatedBy: null,
+    updatedByModel: null,
+  },
+  {
+    type: "Lab Test",
+    age: 35,
+    gender: "Male",
+    problem: "Hormone Imbalance",
+    problemDescription: "Unexplained weight gain and mood swings",
+    status: "Approve",
+    appointmentDate: new Date("2024-09-25"),
+    commission: { superAdminToFranchise: 17, superAdminToAgent: 11 },
+    updatedBy: null,
+    updatedByModel: null,
+  },
+  {
+    type: "Lab Test",
+    age: 50,
+    gender: "Female",
+    problem: "Comprehensive Health Checkup",
+    problemDescription: "Annual full body checkup",
+    status: "Pending",
+    appointmentDate: new Date("2024-09-30"),
+    commission: { superAdminToFranchise: 22, superAdminToAgent: 15 },
+    updatedBy: null,
+    updatedByModel: null,
+  },
+];
+
+const reports = [
+  {
+    details: "Complete Blood Count results",
+    file: "https://example.com/reports/cbc_result.pdf",
+  },
+  {
+    details: "Lipid Profile analysis",
+    file: "https://example.com/reports/lipid_profile.pdf",
+  },
+  {
+    details: "Thyroid Function Test report",
+    file: "https://example.com/reports/thyroid_test.pdf",
+  },
+  {
+    details: "Liver Function Test results",
+    file: "https://example.com/reports/liver_function.pdf",
+  },
+  {
+    details: "Kidney Function Test analysis",
+    file: "https://example.com/reports/kidney_function.pdf",
+  },
+  {
+    details: "Hemoglobin A1c Test results",
+    file: "https://example.com/reports/hba1c_test.pdf",
+  },
+  {
+    details: "Vitamin D Level assessment",
+    file: "https://example.com/reports/vitamin_d_level.pdf",
+  },
+  {
+    details: "Prostate-Specific Antigen (PSA) Test report",
+    file: "https://example.com/reports/psa_test.pdf",
+  },
+  {
+    details: "Comprehensive Metabolic Panel (CMP) analysis",
+    file: "https://example.com/reports/cmp_analysis.pdf",
+  },
+  {
+    details: "Urinalysis results",
+    file: "https://example.com/reports/urinalysis.pdf",
+  },
+];
+
+async function seedDatabase() {
   try {
+    // Hash the password
+    const hashedPassword = await hashPassword("12345");
+
+    // Update passwords in all entities
+    franchises.forEach((franchise) => (franchise.password = hashedPassword));
+    agents.forEach((agent) => (agent.password = hashedPassword));
+    diagnosticLabs.forEach((lab) => (lab.password = hashedPassword));
+    users.forEach((user) => (user.password = hashedPassword));
+
+    // Clear existing data
     await Location.deleteMany({});
     await Franchise.deleteMany({});
     await Agent.deleteMany({});
-    await User.deleteMany({});
     await DiagnosticTest.deleteMany({});
     await DiagnosticLab.deleteMany({});
+    await User.deleteMany({});
     await Appointment.deleteMany({});
+    await LabCategory.deleteMany({});
+    await Report.deleteMany({});
 
-    await Location.insertMany(locations);
-    await User.insertMany(users);
-    await Franchise.insertMany(franchises);
-    await Agent.insertMany(agents);
-    await DiagnosticTest.insertMany(diagnosticTests);
-    await DiagnosticLab.insertMany(diagnosticLabs);
-    await Appointment.insertMany(appointments);
+    // Insert new data
+    const createdLocations = await Location.insertMany(locations);
+    console.log("Locations seeded");
+
+    const createdLabCategories = await LabCategory.insertMany(labCategories);
+    console.log("Lab Categories seeded");
+
+    // Update diagnostic tests with created lab category IDs
+    diagnosticTests.forEach((test, index) => {
+      test.labCategory =
+        createdLabCategories[index % createdLabCategories.length]._id;
+    });
+    const createdDiagnosticTests = await DiagnosticTest.insertMany(
+      diagnosticTests
+    );
+    console.log("Diagnostic Tests seeded");
+
+    // Update franchises with created location IDs
+    franchises.forEach((franchise, index) => {
+      franchise.location = createdLocations[index]._id;
+    });
+    const createdFranchises = await Franchise.insertMany(franchises);
+    console.log("Franchises seeded");
+
+    // Update agents with created location and franchise IDs
+    agents.forEach((agent, index) => {
+      agent.location = createdLocations[index]._id;
+      agent.franchise = createdFranchises[index]._id;
+    });
+    const createdAgents = await Agent.insertMany(agents);
+    console.log("Agents seeded");
+
+    // Update diagnostic labs with created location IDs and test IDs
+    diagnosticLabs.forEach((lab, index) => {
+      lab.address = createdLocations[index]._id;
+      // Assign 10 random tests to each lab
+      lab.testsOffered = getRandomTests(createdDiagnosticTests, 10);
+    });
+    const createdDiagnosticLabs = await DiagnosticLab.insertMany(
+      diagnosticLabs
+    );
+    console.log("Diagnostic Labs seeded");
+
+    const createdUsers = await User.insertMany(users);
+    console.log("Users seeded");
+
+    // Update appointments with created IDs
+    // appointments.forEach((appointment, index) => {
+    //   appointment.referral = createdAgents[index % createdAgents.length]._id;
+    //   const lab = createdDiagnosticLabs[index % createdDiagnosticLabs.length];
+    //   appointment.labs = {
+    //     lab: lab._id,
+    //     tests: [],
+    //   };
+
+    //   // Assign 1-3 random tests from the lab's offered tests
+    //   const testCount = Math.floor(Math.random() * 3) + 1;
+    //   const labTests = getRandomTests(lab.testsOffered, testCount);
+    //   appointment.labs.tests = labTests.map((testId) => ({
+    //     test: testId,
+    //     status: ["Pending", "In Progress", "Completed"][
+    //       Math.floor(Math.random() * 3)
+    //     ],
+    //   }));
+
+    //   appointment.createdBy = createdUsers[index % createdUsers.length]._id;
+    //   appointment.createdByModel = "User";
+    // });
+
+    appointments.forEach((appointment, index) => {
+      // Set referral
+      appointment.referral = createdAgents[index % createdAgents.length]._id;
+
+      // Set lab and tests
+      const lab = createdDiagnosticLabs[index % createdDiagnosticLabs.length];
+      appointment.labs = {
+        lab: lab._id,
+        tests: [],
+      };
+
+      // Assign 1-3 random tests from the lab's offered tests
+      const testCount = Math.floor(Math.random() * 3) + 1;
+      const labTests = getRandomTests(lab.testsOffered, testCount);
+      appointment.labs.tests = labTests.map((testId) => {
+        const status = ["Pending", "In Progress", "Completed"][
+          Math.floor(Math.random() * 3)
+        ];
+        const updateModels = ["User", "DiagnosticLab"];
+        const randomModel =
+          updateModels[Math.floor(Math.random() * updateModels.length)];
+        let updatedBy;
+
+        switch (randomModel) {
+          case "User":
+            // Find a superAdmin or councilor
+            const adminOrCouncilor = createdUsers.filter(
+              (user) => user.role === "superAdmin" || user.role === "councilor"
+            );
+            if (adminOrCouncilor.length > 0) {
+              updatedBy =
+                adminOrCouncilor[
+                  Math.floor(Math.random() * adminOrCouncilor.length)
+                ]._id;
+            } else {
+              // Fallback to lab if no admin or councilor
+              updatedBy = lab._id;
+              randomModel = "DiagnosticLab";
+            }
+            break;
+          case "DiagnosticLab":
+            updatedBy = lab._id;
+            break;
+        }
+
+        return {
+          test: testId,
+          status: status,
+          updatedBy: updatedBy,
+          updatedByModel: randomModel,
+          updatedAt: new Date(),
+        };
+      });
+
+      // Set other appointment fields (these remain unchanged)
+      appointment.createdBy = createdUsers[index % createdUsers.length]._id;
+      appointment.createdByModel = "User";
+
+      const now = new Date();
+      const futureDate = new Date(
+        now.getTime() + Math.random() * 30 * 24 * 60 * 60 * 1000
+      );
+      appointment.appointmentDate = futureDate;
+
+      appointment.status = ["Pending", "Approve", "Reject"][
+        Math.floor(Math.random() * 3)
+      ];
+
+      appointment.commission = {
+        superAdminToFranchise: Math.floor(Math.random() * 10) + 15,
+        superAdminToAgent: Math.floor(Math.random() * 10) + 10,
+      };
+    });
+    const createdAppointments = await Appointment.insertMany(appointments);
+    console.log("Appointments seeded");
+
+    // Seed reports
+    const reportsToInsert = reports.map((report, index) => ({
+      ...report,
+      appointment: createdAppointments[index % createdAppointments.length]._id,
+      generatedAt: new Date(
+        Date.now() - Math.floor(Math.random() * 10000000000)
+      ), // Random date within the last ~4 months
+    }));
+
+    await Report.insertMany(reportsToInsert);
+    console.log("Reports seeded");
 
     console.log("Database seeded successfully");
   } catch (error) {
     console.error("Error seeding database:", error);
+  } finally {
+    mongoose.disconnect();
   }
-};
+}
 
-mongoose
-  .connect(
-    "mongodb+srv://shahzad201415:L6drIrBh0AYy97yN@cluster0.drcxrzd.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
-  )
-  .then(() => {
-    console.log("Connected to MongoDB");
-    return seedData();
-  })
-  .then(() => {
-    console.log("Seeding completed");
-    mongoose.connection.close();
-  })
-  .catch((error) => {
-    console.error("Error:", error);
-    mongoose.connection.close();
-  });
+// Helper function to get random tests
+function getRandomTests(tests, count) {
+  const shuffled = tests.sort(() => 0.5 - Math.random());
+  return shuffled.slice(0, count).map((test) => test._id);
+}
+
+seedDatabase();

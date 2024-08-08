@@ -5,6 +5,8 @@ const bodyParser = require("body-parser");
 const app = express();
 app.use(cors());
 app.use(bodyParser.json());
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 mongoose.set("strictQuery", false);
 require("dotenv").config();
 
@@ -23,6 +25,7 @@ mongoose
 app.use(require("./routes/booking"));
 app.use(require("./routes/userRoutes"));
 app.use(require("./routes/diagnosticLabRoutes"));
+app.use(require("./routes/labCategoriesRoutes"));
 app.use(require("./routes/franchiseRoutes"));
 app.use(require("./routes/agentsRoutes"));
 app.use(require("./routes/appointmentRoutes"));

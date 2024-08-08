@@ -10,9 +10,17 @@ const testSchema = new mongoose.Schema({
     enum: ["Pending", "In Progress", "Completed", "Closed"],
     default: "Pending",
   },
+  // updatedBy: {
+  //   type: mongoose.Schema.Types.ObjectId,
+  //   ref: "User",
+  // },
   updatedBy: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "User",
+    refPath: "updatedByModel",
+  },
+  updatedByModel: {
+    type: String,
+    enum: ["User", "Franchise", "DiagnosticLab"],
   },
   updatedAt: {
     type: Date,

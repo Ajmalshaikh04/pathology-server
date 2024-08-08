@@ -8,6 +8,7 @@ const DiagnosticLab = require("../model/diagnosticLabs.js");
 const Franchise = require("../model/franchise.js");
 const APIFeatures = require("../helper/apifeature.js");
 const Agents = require("../model/agents.js");
+const Location = require("../model/location");
 
 const logInUser = async (req, res) => {
   try {
@@ -119,118 +120,36 @@ const verifyOTP = async (req, res) => {
   }
 };
 
-// const signInAdmin = async (req, res) => {
-//   try {
-//     const { email, password } = req.body;
+const resendOTP = async (req, res) => {
+  try {
+    const { email } = req.body;
 
-//     const user = await User.findOne({ email });
-//     const franchise = await Franchise.findOne({ email });
+    const user = await User.findOne({ email }).select("-password");
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
 
-//     if (!user && !franchise) {
-//       return res.status(404).json({
-//         success: false,
-//         message: "User not found",
-//       });
-//     }
+    const otp = generateOTP();
+    user.otp = otp;
+    await user.save();
 
-//     const account = user || franchise;
+    sendOtpMail(email, otp);
 
-//     if (account.role === "user") {
-//       return res.status(403).json({
-//         success: false,
-//         message: "Unauthorized Access: Only admins are allowed.",
-//       });
-//     }
-
-//     const passwordMatch = await bcrypt.compare(password, account.password);
-//     if (!passwordMatch) {
-//       return res.status(403).json({
-//         success: false,
-//         message: "Invalid Email or Password",
-//       });
-//     }
-
-//     const token = jwt.sign(
-//       { _id: account._id, role: account.role },
-//       process.env.JWT_SECRET_KEY,
-//       { expiresIn: "24h" }
-//     );
-
-//     return res.status(200).json({
-//       success: true,
-//       message: "Signin Successful",
-//       role: account.role,
-//       token: token,
-//     });
-//   } catch (err) {
-//     console.error(err);
-//     return res.status(500).json({
-//       success: false,
-//       message: "Internal Server Error",
-//     });
-//   }
-// };
-
-// const signInAdmin = async (req, res) => {
-//   try {
-//     const { email, password } = req.body;
-
-//     const account = await User.aggregate([
-//       { $match: { email } },
-//       {
-//         $unionWith: {
-//           coll: "franchises",
-//           pipeline: [{ $match: { email } }],
-//         },
-//       },
-//       { $limit: 1 },
-//     ]).exec();
-
-//     if (!account || account.length === 0) {
-//       return res.status(404).json({
-//         success: false,
-//         message: "User not found",
-//       });
-//     }
-
-//     const foundAccount = account[0];
-
-//     if (foundAccount.role === "user") {
-//       return res.status(403).json({
-//         success: false,
-//         message: "Unauthorized Access: Only admins are allowed.",
-//       });
-//     }
-
-//     if (!(await bcrypt.compare(password, foundAccount.password))) {
-//       return res.status(403).json({
-//         success: false,
-//         message: "Invalid Email or Password",
-//       });
-//     }
-
-//     const token = jwt.sign(
-//       { _id: foundAccount._id, role: foundAccount.role },
-//       process.env.JWT_SECRET_KEY,
-//       { expiresIn: "24h" }
-//     );
-
-//     console.log(foundAccount);
-//     return res.status(200).json({
-//       success: true,
-//       message: "Signin Successful",
-//       role: foundAccount.role,
-//       location: foundAccount?.location,
-//       token: token,
-//     });
-//   } catch (err) {
-//     console.error(err);
-//     return res.status(500).json({
-//       success: false,
-//       message: "Internal Server Error",
-//     });
-//   }
-// };
+    return res.status(200).json({
+      success: true,
+      message: "OTP resent successfully",
+    });
+  } catch (err) {
+    console.error(err); // Log the error for debugging purposes
+    return res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+    });
+  }
+};
 
 const signInAdmin = async (req, res) => {
   try {
@@ -241,6 +160,50 @@ const signInAdmin = async (req, res) => {
       {
         $unionWith: {
           coll: "franchises",
+          pipeline: [
+            { $match: { email } },
+            {
+              $lookup: {
+                from: "locations",
+                localField: "location",
+                foreignField: "_id",
+                as: "locationDetails",
+              },
+            },
+            {
+              $unwind: {
+                path: "$locationDetails",
+                preserveNullAndEmptyArrays: true,
+              },
+            },
+          ],
+        },
+      },
+      {
+        $unionWith: {
+          coll: "diagnosticlabs",
+          pipeline: [
+            { $match: { email } },
+            {
+              $lookup: {
+                from: "locations",
+                localField: "address",
+                foreignField: "_id",
+                as: "locationDetails",
+              },
+            },
+            {
+              $unwind: {
+                path: "$locationDetails",
+                preserveNullAndEmptyArrays: true,
+              },
+            },
+          ],
+        },
+      },
+      {
+        $unionWith: {
+          coll: "agents",
           pipeline: [
             { $match: { email } },
             {
@@ -291,7 +254,8 @@ const signInAdmin = async (req, res) => {
     if (foundAccount.role === "user") {
       return res.status(403).json({
         success: false,
-        message: "Unauthorized Access: Only admins are allowed.",
+        message:
+          "Unauthorized Access: Only admins, labs, and agents are allowed.",
       });
     }
 
@@ -311,6 +275,14 @@ const signInAdmin = async (req, res) => {
     // Update last login date
     if (foundAccount.role === "franchise") {
       await Franchise.findByIdAndUpdate(foundAccount._id, {
+        lastLogin: new Date(),
+      });
+    } else if (foundAccount.role === "lab") {
+      await DiagnosticLab.findByIdAndUpdate(foundAccount._id, {
+        lastLogin: new Date(),
+      });
+    } else if (foundAccount.role === "agent") {
+      await Agents.findByIdAndUpdate(foundAccount._id, {
         lastLogin: new Date(),
       });
     } else {
@@ -336,20 +308,25 @@ const signInAdmin = async (req, res) => {
 
 const signOutAdmin = async (req, res) => {
   try {
-    const { account, role } = req;
-    console.log("signOutAdmin", role, account);
+    const { userId, role } = req.body; // Extract userId and role from the request body
+
+    // Update lastLogout date based on the role
     if (role === "franchise") {
-      await Franchise.findByIdAndUpdate(account, { lastLogout: new Date() });
+      await Franchise.findByIdAndUpdate(userId, { lastLogout: new Date() });
+    } else if (role === "lab") {
+      await DiagnosticLab.findByIdAndUpdate(userId, { lastLogout: new Date() });
+    } else if (role === "agent") {
+      await Agents.findByIdAndUpdate(userId, { lastLogout: new Date() });
     } else {
-      await User.findByIdAndUpdate(account, { lastLogout: new Date() });
+      await User.findByIdAndUpdate(userId, { lastLogout: new Date() });
     }
 
     return res.status(200).json({
       success: true,
-      message: "Admin signed out successfully",
+      message: "Signout Successful",
     });
   } catch (err) {
-    console.error(err);
+    console.error("Error signing out admin:", err);
     return res.status(500).json({
       success: false,
       message: "Internal Server Error",
@@ -358,65 +335,59 @@ const signOutAdmin = async (req, res) => {
 };
 
 const registerAdmin = async (req, res) => {
-  const session = await mongoose.startSession();
-  session.startTransaction();
   try {
-    const { name, mobile, email, password, labAddress } = req.body;
+    const { name, mobile, email, password, address, city, state, pinCode } =
+      req.body;
 
     // Check if email or mobile number already exists
-    const userFound = await User.findOne({
+    const franchiseFound = await Franchise.findOne({
       $or: [{ email }, { mobile }],
     });
 
-    if (userFound) {
+    if (franchiseFound) {
       return res.status(400).json({
         success: false,
-        message: "User already exists.",
+        message: "Franchise already exists.",
       });
     }
 
-    const otp = generateOTP();
-
+    // Hash the password
     const saltRounds = 10;
     const salt = await bcrypt.genSalt(saltRounds);
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    const userData = {
+    // Create location data
+    const locationData = {
+      address,
+      city,
+      state,
+      pinCode,
+    };
+
+    // Create location
+    const location = await Location.create(locationData);
+
+    // Create franchise data
+    const franchiseData = {
       name,
-      mobile, // mobile for both user and lab contact number
       email,
+      contactNumber: mobile,
       password: hashedPassword,
-      otp,
-      role: "admin",
+      location: location._id, // Reference to the created location
     };
 
-    const user = await User.create([userData], { session });
-    const userId = user[0]._id; // Assuming the user is stored in the first element of the array
-
-    // Create the lab using the registered user's ID
-    const labData = {
-      name, // same name as user
-      address: labAddress,
-      contactNumber: mobile, // same mobile as user
-      userId: userId,
-    };
-
-    const lab = await DiagnosticLab.create([labData], { session });
-
-    await session.commitTransaction();
-    session.endSession();
+    // Create franchise
+    const franchise = await Franchise.create(franchiseData);
 
     return res.status(201).json({
       success: true,
-      message: "User and lab created successfully",
+      message: "Franchise registered successfully",
       data: {
-        user: user[0],
-        lab: lab[0],
+        franchise,
+        location,
       },
     });
   } catch (err) {
-    await session.abortTransaction();
-    session.endSession();
     console.error(err);
     return res.status(500).json({
       success: false,
@@ -510,10 +481,10 @@ const assignCounselor = async (req, res) => {
   try {
     const { userId, counselorId } = req.body;
 
-    // Check if the counselor exists and has the role of counselor
-    const counselor = await User.findById({
+    // Check if the counselor exists and has the role of councilor
+    const counselor = await User.findOne({
       _id: counselorId,
-      role: "counselor",
+      role: "councilor",
     });
     if (!counselor) {
       return res
@@ -522,7 +493,7 @@ const assignCounselor = async (req, res) => {
     }
 
     // Check if the user exists
-    const user = await User.findById(userId);
+    const user = await User.findById(userId).select("-password");
     if (!user) {
       return res
         .status(400)
@@ -531,6 +502,11 @@ const assignCounselor = async (req, res) => {
 
     // Assign the counselor to the user
     user.assignedCounselor = counselorId;
+
+    // Log the user document before saving
+    console.log("User before saving:", user);
+
+    // Use save method to avoid validation issues
     await user.save();
 
     res.status(200).json({
@@ -613,6 +589,7 @@ module.exports = {
   signOutAdmin,
   logInUser,
   verifyOTP,
+  resendOTP,
   signInAdmin,
   registerAdmin,
   getAllUsers,

@@ -13,6 +13,7 @@ const {
   assignCounselor,
   getAllAssignedUsersByCounselorId,
   getAllAgents,
+  resendOTP,
 } = require("../controller/userControllers");
 const {
   accountMiddleware,
@@ -24,7 +25,7 @@ router.post("/login", logInUser);
 
 // Verify OTP
 router.put("/verify-otp", verifyOTP);
-
+router.post("/resend-otp", resendOTP);
 router.post("/register-admin", registerAdmin);
 router.post("/signin-admin", signInAdmin);
 
@@ -35,7 +36,14 @@ router.post("/user-logout", accountMiddleware, logOutUser);
 router.post(
   "/admin-signout",
   accountMiddleware,
-  roleMiddleware("admin", "superAdmin", "franchise", "councilor"),
+  roleMiddleware(
+    "admin",
+    "superAdmin",
+    "franchise",
+    "councilor",
+    "lab",
+    "agent"
+  ),
   signOutAdmin
 );
 
@@ -58,7 +66,7 @@ router.get(
   getAllCouncilors
 );
 
-router.put(
+router.patch(
   "/assign-counselor",
   accountMiddleware,
   roleMiddleware("superAdmin"),

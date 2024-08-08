@@ -7,7 +7,9 @@ const Schema = mongoose.Schema;
 const agentSchema = new Schema({
   name: { type: String, required: true },
   email: { type: String, required: true },
+  password: { type: String, required: true },
   contact: { type: String, required: true },
+  role: { type: String, default: "agent" },
   location: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Location",
@@ -18,6 +20,8 @@ const agentSchema = new Schema({
     ref: "Franchise",
     required: true,
   },
+  lastLogin: { type: Date },
+  lastLogout: { type: Date },
 });
 
 module.exports = mongoose.model("Agent", agentSchema);
@@ -40,7 +44,11 @@ const testSchema = new mongoose.Schema({
   },
   updatedBy: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "User",
+    refPath: "updatedByModel",
+  },
+  updatedByModel: {
+    type: String,
+    enum: ["User", "Franchise", "DiagnosticLab"],
   },
   updatedAt: {
     type: Date,
@@ -74,7 +82,7 @@ const appointmentSchema = new mongoose.Schema(
       enum: ["Pending", "Approve", "Reject"],
       default: "Pending",
     },
-    appointmentDate: { type: Date, required: true },
+    appointmentDate: { type: Date },
     ticket: { type: String, default: generateTicket },
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
@@ -92,12 +100,6 @@ const appointmentSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-appointmentSchema.virtual("hasTestsInProgress").get(function () {
-  return this.labs.some((lab) =>
-    lab.tests.some((test) => test.status === "In Progress")
-  );
-});
-
 const Appointment = mongoose.model("Appointment", appointmentSchema);
 module.exports = Appointment;
 
@@ -106,38 +108,55 @@ module.exports = Appointment;
 C:\ABS\Projects\pathology-server\model\diagnosticLabs.js
 
 const mongoose = require("mongoose");
-const DiagnosticLabSchema = new mongoose.Schema({
-  userId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "User",
-  },
-  name: {
-    type: String,
-    required: true,
-  },
-  address: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "Location",
-    required: true,
-  },
-  contactNumber: {
-    type: String,
-    required: true,
-  },
-  image: {
-    type: String,
-  },
-  isLabLogIn: {
-    type: Boolean,
-    default: false,
-  },
-  testsOffered: [
-    {
+const DiagnosticLabSchema = new mongoose.Schema(
+  {
+    userId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "DiagnosticTest",
+      ref: "User",
     },
-  ],
-});
+    name: {
+      type: String,
+      required: true,
+    },
+    email: {
+      type: String,
+      required: true,
+    },
+    address: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Location",
+      required: true,
+    },
+    contactNumber: {
+      type: String,
+      required: true,
+    },
+    image: {
+      type: String,
+    },
+    isLabLogIn: {
+      type: Boolean,
+      default: false,
+    },
+    password: {
+      type: String,
+      required: true,
+    },
+    role: {
+      type: String,
+      default: "lab",
+    },
+    testsOffered: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "DiagnosticTest",
+      },
+    ],
+    lastLogin: { type: Date },
+    lastLogout: { type: Date },
+  },
+  { timestamps: true }
+);
 
 const DiagnosticLab = mongoose.model("DiagnosticLab", DiagnosticLabSchema);
 
@@ -150,20 +169,16 @@ C:\ABS\Projects\pathology-server\model\diagnosticTest.js
 const mongoose = require("mongoose");
 
 const DiagnosticTestSchema = new mongoose.Schema({
-  name: {
-    type: String,
-    required: true,
-  },
-  image: {
-    type: String,
-  },
   description: {
     type: String,
-    // required: true,
   },
   price: {
     type: Number,
     required: true,
+  },
+  labCategory: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "LabCategories",
   },
 });
 
@@ -217,6 +232,26 @@ module.exports = Franchise;
 
 
 =======================================================================
+C:\ABS\Projects\pathology-server\model\labCategories.js
+
+const mongoose = require("mongoose");
+
+const LabCategoriesSchema = new mongoose.Schema({
+  name: {
+    type: String,
+    required: true,
+  },
+  image: {
+    type: String,
+  },
+});
+
+const LabCategories = mongoose.model("LabCategories", LabCategoriesSchema);
+
+module.exports = LabCategories;
+
+
+=======================================================================
 C:\ABS\Projects\pathology-server\model\location.js
 
 const mongoose = require("mongoose");
@@ -230,6 +265,36 @@ const locationSchema = new Schema({
 });
 
 module.exports = mongoose.model("Location", locationSchema);
+
+
+=======================================================================
+C:\ABS\Projects\pathology-server\model\report.js
+
+const mongoose = require("mongoose");
+
+const reportSchema = new mongoose.Schema(
+  {
+    appointment: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Appointment",
+      required: true,
+    },
+    generatedAt: {
+      type: Date,
+      default: Date.now,
+    },
+    details: {
+      type: String,
+    },
+    file: {
+      type: String,
+      required: true,
+    },
+  },
+  { timestamps: true }
+);
+
+module.exports = mongoose.model("Report", reportSchema);
 
 
 =======================================================================

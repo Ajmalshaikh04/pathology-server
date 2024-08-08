@@ -167,12 +167,50 @@ const updateAppointment = async (req, res) => {
   }
 };
 
+// const updateLabTestStatus = async (req, res) => {
+//   try {
+//     const userId = req.account;
+//     const { id, testId } = req.params;
+//     const { status } = req.body;
+//     console.log("<<<<<<<<<<<<<<", id, testId);
+//     const appointment = await Appointment.findById(id);
+//     if (!appointment) {
+//       return res.status(404).json({ message: "Appointment not found" });
+//     }
+
+//     const lab = appointment.labs;
+//     if (!lab) {
+//       return res
+//         .status(404)
+//         .json({ message: "Lab not found in the appointment" });
+//     }
+//     // console.log("LAB>>>>", lab);
+
+//     const test = lab.tests.find((test) => test._id.toString() === testId);
+//     if (!test) {
+//       return res.status(404).json({ message: "Test not found in the lab" });
+//     }
+
+//     test.status = status;
+//     test.updatedBy = userId;
+//     test.updatedAt = new Date();
+//     console.log(">>.>>>>", test?.updatedBy);
+
+//     await appointment.save();
+//     res.status(200).json(appointment);
+//   } catch (error) {
+//     // Handle errors and respond with an error message
+//     res.status(500).json({ message: error.message });
+//   }
+// };
+
 const updateLabTestStatus = async (req, res) => {
   try {
     const userId = req.account;
+    const userRole = req.role; // Assuming req.role contains the role of the user
     const { id, testId } = req.params;
     const { status } = req.body;
-    console.log("<<<<<<<<<<<<<<", id, testId);
+
     const appointment = await Appointment.findById(id);
     if (!appointment) {
       return res.status(404).json({ message: "Appointment not found" });
@@ -184,25 +222,51 @@ const updateLabTestStatus = async (req, res) => {
         .status(404)
         .json({ message: "Lab not found in the appointment" });
     }
-    // console.log("LAB>>>>", lab);
 
     const test = lab.tests.find((test) => test._id.toString() === testId);
     if (!test) {
       return res.status(404).json({ message: "Test not found in the lab" });
     }
+    console.log(test);
+
+    // Set the updatedByModel based on the role
+    let updatedByModel;
+    switch (userRole) {
+      case "admin":
+      case "superAdmin":
+      case "councilor":
+        updatedByModel = "User";
+        break;
+      case "lab":
+        updatedByModel = "DiagnosticLab";
+        break;
+      case "franchise":
+        updatedByModel = "Franchise";
+        break;
+      default:
+        return res.status(400).json({ message: "Invalid user role" });
+    }
+
+    // Validate the userId against the determined model
+    const UserModel = mongoose.model(updatedByModel);
+    const user = await UserModel.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: `${updatedByModel} not found` });
+    }
 
     test.status = status;
     test.updatedBy = userId;
+    test.updatedByModel = updatedByModel; // Set the model type based on user role
     test.updatedAt = new Date();
-    console.log(">>.>>>>", test?.updatedBy);
 
     await appointment.save();
     res.status(200).json(appointment);
   } catch (error) {
-    // Handle errors and respond with an error message
     res.status(500).json({ message: error.message });
   }
 };
+
+module.exports = { updateLabTestStatus };
 
 const deleteAppointment = async (req, res) => {
   try {
@@ -216,22 +280,6 @@ const deleteAppointment = async (req, res) => {
     await appointment.remove();
 
     res.status(200).json({ message: "Appointment deleted successfully" });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
-
-const getAllAppointmentsByAgent = async (req, res) => {
-  try {
-    const { agentId } = req.params;
-    const appointments = await Appointment.find({
-      createdBy: agentId,
-      createdByModel: "Agent",
-    })
-      .populate("user")
-      .populate("lab")
-      .populate("tests");
-    res.status(200).json(appointments);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -292,6 +340,10 @@ const getAllAppointments = async (req, res) => {
       .populate({
         path: "labs.tests.test",
         model: "DiagnosticTest",
+        populate: {
+          path: "labCategory",
+          model: "LabCategories",
+        },
       })
       .populate({
         path: "labs.tests.updatedBy",
@@ -337,6 +389,14 @@ const getAppointmentsByUserId = async (req, res) => {
       .populate({
         path: "labs.tests.test",
         model: "DiagnosticTest",
+        populate: {
+          path: "labCategory",
+          model: "LabCategories",
+        },
+      })
+      .populate({
+        path: "labs.tests.updatedBy",
+        model: "User",
       });
     res.json(appointments);
   } catch (error) {
@@ -499,10 +559,105 @@ const getLabsWithTestsInProgress = async (req, res) => {
     }).exec();
 
     res.status(200).json({
-      appointments,
+      data: appointments,
       totalAppointments: appointments.length,
     });
   } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+const findAppointmentsByLabAndTestStatus = async (req, res) => {
+  try {
+    const { labId } = req.params;
+
+    // Ensure labId is converted to ObjectId if needed
+    const appointments = await Appointment.find({
+      "labs.lab": labId,
+      "labs.tests.status": { $in: ["In Progress", "Completed", "Closed"] },
+    })
+      .populate({
+        path: "referral",
+        model: "Agent",
+      })
+      .populate({
+        path: "labs.lab",
+        model: "DiagnosticLab",
+      })
+      .populate({
+        path: "labs.tests.test",
+        model: "DiagnosticTest",
+        populate: {
+          path: "labCategory",
+          model: "LabCategories",
+        },
+      })
+      .populate({
+        path: "labs.tests.updatedBy",
+        // Dynamically reference the correct model using the updatedByModel field
+        populate: {
+          path: "updatedBy",
+          model: { path: "labs.tests.updatedByModel" },
+        },
+      })
+      .populate({
+        path: "createdBy",
+      })
+      .exec();
+
+    res.status(200).json({
+      data: appointments,
+      totalAppointments: appointments.length,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({
+      error: "Error fetching appointments",
+      details: err.message,
+    });
+  }
+};
+
+const getAllAppointmentsByAgentId = async (req, res) => {
+  try {
+    const { agentId } = req.params;
+
+    // Fetch appointments where the referral matches the agentId
+    const appointments = await Appointment.find({ referral: agentId })
+      // Populate the referral field with Agent documents
+      .populate({
+        path: "referral",
+        model: "Agent",
+      })
+      // Populate the labs.lab field with DiagnosticLab documents
+      .populate({
+        path: "labs.lab",
+        model: "DiagnosticLab",
+      })
+      // Populate the labs.tests.test field with DiagnosticTest documents
+      .populate({
+        path: "labs.tests.test",
+        model: "DiagnosticTest",
+      })
+      // Populate the labs.tests.updatedBy field with User documents
+      .populate({
+        path: "labs.tests.updatedBy",
+        model: "User",
+      })
+      // Populate the createdBy field with User documents (assuming it's a user reference)
+      .populate({
+        path: "createdBy",
+        model: "User",
+      })
+      .populate({
+        path: "labs.tests.updatedBy",
+        model: "User",
+      });
+
+    // Respond with the found appointments
+    res.status(200).json(appointments);
+  } catch (error) {
+    // Handle any errors that occurred during the query
     res.status(500).json({ message: error.message });
   }
 };
@@ -512,7 +667,7 @@ module.exports = {
   updateAppointment,
   updateLabTestStatus,
   deleteAppointment,
-  getAllAppointmentsByAgent,
+  getAllAppointmentsByAgentId,
   getAllAppointmentsByFranchise,
   getAllAppointmentsBySuperAdmin,
   getAllAppointments,
@@ -522,4 +677,5 @@ module.exports = {
   updateCommission,
   getLabsByLocation,
   getLabsWithTestsInProgress,
+  findAppointmentsByLabAndTestStatus,
 };
