@@ -50,13 +50,10 @@ const logInUser = async (req, res) => {
 
 const logOutUser = async (req, res) => {
   try {
-    const { email, mobile } = req.body;
+    const userId = req.account;
+    console.log(userId);
 
-    const user = await User.findOneAndUpdate(
-      { email, mobile },
-      { $set: { lastLogout: new Date() } },
-      { new: true }
-    );
+    const user = await User.findOneAndUpdate(userId);
 
     if (!user) {
       return res.status(404).json({

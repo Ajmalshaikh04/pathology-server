@@ -204,12 +204,79 @@ const updateAppointment = async (req, res) => {
 //   }
 // };
 
+// const updateLabTestStatus = async (req, res) => {
+//   try {
+//     const userId = req.account;
+//     const userRole = req.role;
+//     const { id, testId } = req.params;
+//     const { status } = req.body;
+//     console.log("UPDATETESTSTATUS", userRole);
+//     console.log("STATUS", status);
+
+//     console.log(req.body);
+
+//     const appointment = await Appointment.findById(id);
+//     if (!appointment) {
+//       return res.status(404).json({ message: "Appointment not found" });
+//     }
+
+//     const lab = appointment.labs;
+//     if (!lab) {
+//       return res
+//         .status(404)
+//         .json({ message: "Lab not found in the appointment" });
+//     }
+
+//     const test = lab.tests.find((test) => test._id.toString() === testId);
+//     if (!test) {
+//       return res.status(404).json({ message: "Test not found in the lab" });
+//     }
+//     console.log("Find Test 1", test);
+
+//     // Set the updatedByModel based on the role
+//     let updatedByModel;
+//     switch (userRole) {
+//       case "admin":
+//       case "superAdmin":
+//       case "councilor":
+//         updatedByModel = "User";
+//         break;
+//       case "lab":
+//         updatedByModel = "DiagnosticLab";
+//         break;
+//       default:
+//         return res.status(400).json({ message: "Invalid user role" });
+//     }
+
+//     test.status = status;
+//     test.updatedBy = userId;
+//     test.updatedByModel = updatedByModel; // Set the model type based on user role
+//     test.updatedAt = new Date();
+//     console.log("Updated Test 2", test);
+
+//     await appointment.save();
+//     res.status(200).json(appointment);
+//   } catch (error) {
+//     res.status(500).json({ message: error.message });
+//   }
+// };
+
 const updateLabTestStatus = async (req, res) => {
   try {
     const userId = req.account;
-    const userRole = req.role; // Assuming req.role contains the role of the user
+    const userRole = req.role;
     const { id, testId } = req.params;
     const { status } = req.body;
+
+    // Valid statuses for the test
+    const validStatuses = ["Pending", "In Progress", "Completed", "Closed"];
+
+    // Validate status value
+    if (!validStatuses.includes(status)) {
+      return res
+        .status(400)
+        .json({ message: `Invalid status value: ${status}` });
+    }
 
     const appointment = await Appointment.findById(id);
     if (!appointment) {
@@ -227,7 +294,6 @@ const updateLabTestStatus = async (req, res) => {
     if (!test) {
       return res.status(404).json({ message: "Test not found in the lab" });
     }
-    console.log(test);
 
     // Set the updatedByModel based on the role
     let updatedByModel;
@@ -240,18 +306,8 @@ const updateLabTestStatus = async (req, res) => {
       case "lab":
         updatedByModel = "DiagnosticLab";
         break;
-      case "franchise":
-        updatedByModel = "Franchise";
-        break;
       default:
         return res.status(400).json({ message: "Invalid user role" });
-    }
-
-    // Validate the userId against the determined model
-    const UserModel = mongoose.model(updatedByModel);
-    const user = await UserModel.findById(userId);
-    if (!user) {
-      return res.status(404).json({ message: `${updatedByModel} not found` });
     }
 
     test.status = status;
@@ -265,8 +321,6 @@ const updateLabTestStatus = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
-
-module.exports = { updateLabTestStatus };
 
 const deleteAppointment = async (req, res) => {
   try {
@@ -315,6 +369,68 @@ const getAllAppointmentsBySuperAdmin = async (req, res) => {
   }
 };
 
+// const getAllAppointments = async (req, res) => {
+//   try {
+//     // Create a new instance of APIFeatures
+//     const features = new APIFeatures(Appointment.find(), req.query)
+//       .search()
+//       .filter()
+//       .sort()
+//       .limitFields();
+
+//     // Apply pagination after other operations
+//     const paginatedFeatures = features.paginate();
+
+//     // Execute the query with population
+//     const appointments = await paginatedFeatures.query
+//       .populate({
+//         path: "referral",
+//         model: "Agent",
+//       })
+//       .populate({
+//         path: "labs.lab",
+//         model: "DiagnosticLab",
+//       })
+//       .populate({
+//         path: "labs.tests.test",
+//         model: "DiagnosticTest",
+//         populate: {
+//           path: "labCategory",
+//           model: "LabCategories",
+//         },
+//       })
+//       .populate({
+//         path: "labs.tests.updatedBy",
+//         model: "User",
+//       })
+//       .populate({
+//         path: "createdBy",
+//       });
+
+//     // Get total count for pagination info
+//     const totalAppointments = await Appointment.countDocuments(
+//       features.query._conditions
+//     );
+
+//     res.status(200).json({
+//       success: true,
+//       results: appointments.length,
+//       totalAppointments,
+//       data: appointments,
+//       pagination: {
+//         currentPage: paginatedFeatures.queryString.page * 1 || 1,
+//         limit: paginatedFeatures.queryString.limit * 1 || 20,
+//         totalPages: Math.ceil(
+//           totalAppointments / (paginatedFeatures.queryString.limit * 1 || 20)
+//         ),
+//       },
+//     });
+//   } catch (error) {
+//     console.error("Error fetching appointments:", error);
+//     res.status(500).json({ success: false, message: error.message });
+//   }
+// };
+
 const getAllAppointments = async (req, res) => {
   try {
     // Create a new instance of APIFeatures
@@ -327,7 +443,7 @@ const getAllAppointments = async (req, res) => {
     // Apply pagination after other operations
     const paginatedFeatures = features.paginate();
 
-    // Execute the query with population
+    // Execute the query with initial population
     const appointments = await paginatedFeatures.query
       .populate({
         path: "referral",
@@ -346,12 +462,35 @@ const getAllAppointments = async (req, res) => {
         },
       })
       .populate({
-        path: "labs.tests.updatedBy",
-        model: "User",
-      })
-      .populate({
         path: "createdBy",
-      });
+      })
+      .exec();
+    // Manually populate the updatedBy field
+    const populatedAppointments = await Promise.all(
+      appointments.map(async (appointment) => {
+        const testsWithUpdatedBy = await Promise.all(
+          appointment.labs.tests.map(async (test) => {
+            let updatedByModel = null;
+            if (test.updatedByModel === "User") {
+              updatedByModel = await User.findById(test.updatedBy);
+            } else if (test.updatedByModel === "DiagnosticLab") {
+              updatedByModel = await DiagnosticLab.findById(test.updatedBy);
+            } else if (test.updatedByModel === "SuperAdmin") {
+              updatedByModel = await User.findById(test.updatedBy);
+            }
+            return { ...test.toObject(), updatedBy: updatedByModel };
+          })
+        );
+
+        return {
+          ...appointment.toObject(),
+          labs: {
+            ...appointment.labs.toObject(),
+            tests: testsWithUpdatedBy,
+          },
+        };
+      })
+    );
 
     // Get total count for pagination info
     const totalAppointments = await Appointment.countDocuments(
@@ -360,9 +499,9 @@ const getAllAppointments = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      results: appointments.length,
+      results: populatedAppointments.length,
       totalAppointments,
-      data: appointments,
+      data: populatedAppointments,
       pagination: {
         currentPage: paginatedFeatures.queryString.page * 1 || 1,
         limit: paginatedFeatures.queryString.limit * 1 || 20,
@@ -567,6 +706,57 @@ const getLabsWithTestsInProgress = async (req, res) => {
   }
 };
 
+// const findAppointmentsByLabAndTestStatus = async (req, res) => {
+//   try {
+//     const { labId } = req.params;
+
+//     // Ensure labId is converted to ObjectId if needed
+//     const appointments = await Appointment.find({
+//       "labs.lab": labId,
+//       "labs.tests.status": { $in: ["In Progress", "Completed", "Closed"] },
+//     })
+//       .populate({
+//         path: "referral",
+//         model: "Agent",
+//       })
+//       .populate({
+//         path: "labs.lab",
+//         model: "DiagnosticLab",
+//       })
+//       .populate({
+//         path: "labs.tests.test",
+//         model: "DiagnosticTest",
+//         populate: {
+//           path: "labCategory",
+//           model: "LabCategories",
+//         },
+//       })
+//       .populate({
+//         path: "labs.tests.updatedBy",
+//         // Dynamically reference the correct model using the updatedByModel field
+//         populate: {
+//           path: "updatedBy",
+//           model: { path: "labs.tests.updatedByModel" },
+//         },
+//       })
+//       .populate({
+//         path: "createdBy",
+//       })
+//       .exec();
+
+//     res.status(200).json({
+//       data: appointments,
+//       totalAppointments: appointments.length,
+//     });
+//   } catch (err) {
+//     console.error(err);
+//     res.status(500).json({
+//       error: "Error fetching appointments",
+//       details: err.message,
+//     });
+//   }
+// };
+
 const findAppointmentsByLabAndTestStatus = async (req, res) => {
   try {
     const { labId } = req.params;
@@ -593,21 +783,40 @@ const findAppointmentsByLabAndTestStatus = async (req, res) => {
         },
       })
       .populate({
-        path: "labs.tests.updatedBy",
-        // Dynamically reference the correct model using the updatedByModel field
-        populate: {
-          path: "updatedBy",
-          model: { path: "labs.tests.updatedByModel" },
-        },
-      })
-      .populate({
         path: "createdBy",
       })
       .exec();
 
+    // Manually populate the updatedBy field
+    const populatedAppointments = await Promise.all(
+      appointments.map(async (appointment) => {
+        const testsWithUpdatedBy = await Promise.all(
+          appointment.labs.tests.map(async (test) => {
+            let updatedByModel = null;
+            if (test.updatedByModel === "User") {
+              updatedByModel = await User.findById(test.updatedBy);
+            } else if (test.updatedByModel === "DiagnosticLab") {
+              updatedByModel = await DiagnosticLab.findById(test.updatedBy);
+            } else if (test.updatedByModel === "SuperAdmin") {
+              updatedByModel = await User.findById(test.updatedBy);
+            }
+            return { ...test.toObject(), updatedBy: updatedByModel };
+          })
+        );
+
+        return {
+          ...appointment.toObject(),
+          labs: {
+            ...appointment.labs.toObject(),
+            tests: testsWithUpdatedBy,
+          },
+        };
+      })
+    );
+
     res.status(200).json({
-      data: appointments,
-      totalAppointments: appointments.length,
+      data: populatedAppointments,
+      totalAppointments: populatedAppointments.length,
     });
   } catch (err) {
     console.error(err);

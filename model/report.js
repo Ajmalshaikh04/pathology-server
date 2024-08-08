@@ -7,10 +7,6 @@ const reportSchema = new mongoose.Schema(
       ref: "Appointment",
       required: true,
     },
-    generatedAt: {
-      type: Date,
-      default: Date.now,
-    },
     details: {
       type: String,
     },

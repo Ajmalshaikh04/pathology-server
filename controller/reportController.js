@@ -5,9 +5,23 @@ async function createReport(req, res) {
   try {
     const { appointmentId, details, file } = req.body;
 
-    const appointment = await Appointment.findById(appointmentId).populate(
-      "labs.tests.test"
-    );
+    const appointment = await Appointment.findById(appointmentId)
+      .populate({
+        path: "labs.lab",
+        model: "DiagnosticLab",
+      })
+      .populate({
+        path: "labs.tests.test",
+        model: "DiagnosticTest",
+        populate: {
+          path: "labCategory",
+          model: "LabCategories",
+        },
+      })
+      .populate({
+        path: "createdBy",
+      })
+      .exec();
     if (!appointment) {
       return res.status(404).json({ message: "Appointment not found" });
     }
