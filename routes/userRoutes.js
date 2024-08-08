@@ -14,6 +14,8 @@ const {
   getAllAssignedUsersByCounselorId,
   getAllAgents,
   resendOTP,
+  updateProfile,
+  getProfile,
 } = require("../controller/userControllers");
 const {
   accountMiddleware,
@@ -26,6 +28,10 @@ router.post("/login", logInUser);
 // Verify OTP
 router.put("/verify-otp", verifyOTP);
 router.post("/resend-otp", resendOTP);
+
+router.get("/profile", accountMiddleware, getProfile);
+router.put("/profile/update", accountMiddleware, updateProfile);
+
 router.post("/register-admin", registerAdmin);
 router.post("/signin-admin", signInAdmin);
 

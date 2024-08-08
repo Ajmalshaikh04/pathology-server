@@ -37,7 +37,7 @@ const logInUser = async (req, res) => {
     return res.status(200).json({
       success: true,
       message: "OTP sent successfully",
-      data: user,
+      // data: user,
     });
   } catch (err) {
     console.error(err); // Log the error for debugging purposes
@@ -147,6 +147,106 @@ const resendOTP = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Internal Server Error",
+    });
+  }
+};
+
+const getProfile = async (req, res) => {
+  try {
+    const userId = req.account;
+    const user = await User.findById(userId).select("-password -otp");
+
+    if (!user) {
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
+    }
+
+    res.status(200).json({ success: true, data: user });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+      error: err.message,
+    });
+  }
+};
+
+// const updateProfile = async (req, res) => {
+//   try {
+//     const userId = req.account;
+//     const { name, profileImage } = req.body;
+
+//     // Fetch the user document
+//     const user = await User.findById(userId).select("-password -otp");
+
+//     if (!user) {
+//       return res
+//         .status(404)
+//         .json({ success: false, message: "User not found" });
+//     }
+
+//     // Temporarily make the name field mutable
+//     user.schema.path("name").immutable(false);
+
+//     // Update fields
+//     if (name) user.name = name;
+//     if (profileImage) user.profileImage = profileImage;
+
+//     // Save the updated user document
+//     const updatedUser = await user.save();
+
+//     // Restore the immutability of the name field
+//     user.schema.path("name").immutable(true);
+
+//     res.status(200).json({
+//       success: true,
+//       message: "Profile updated successfully",
+//       data: updatedUser,
+//     });
+//   } catch (err) {
+//     console.error(err);
+//     res.status(500).json({
+//       success: false,
+//       message: "Internal Server Error",
+//       error: err.message,
+//     });
+//   }
+// };
+
+const updateProfile = async (req, res) => {
+  try {
+    const userId = req.account;
+    const { name, profileImage } = req.body;
+
+    const updateData = {};
+    if (name) updateData.name = name;
+    if (profileImage) updateData.profileImage = profileImage;
+
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      { $set: updateData },
+      { new: true, runValidators: true, select: "name email profileImage" }
+    );
+
+    if (!updatedUser) {
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Profile updated successfully",
+      data: updatedUser,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+      error: err.message,
     });
   }
 };
@@ -590,6 +690,8 @@ module.exports = {
   logInUser,
   verifyOTP,
   resendOTP,
+  getProfile,
+  updateProfile,
   signInAdmin,
   registerAdmin,
   getAllUsers,
