@@ -170,13 +170,16 @@ const createAppointment = async (req, res) => {
 
     // If referral is provided, find the agent
     if (referral) {
-      const agent = await Agents.findById(referral);
+      const agent = await Agents.findOne({ contact: referral });
+      console.log(agent);
+
       if (agent) {
         referralId = agent._id;
       } else {
         console.log("No agent found with ID:", referral);
       }
     }
+    console.log("Referral ID:", referralId);
 
     // Verify lab exists
     if (!labs || !labs.lab) {
@@ -682,6 +685,9 @@ const getAllAppointments = async (req, res) => {
       .populate({
         path: "createdBy",
       })
+      .populate({
+        path: "franchise",
+      })
       .exec();
 
     // Manually populate the updatedBy field
@@ -734,6 +740,7 @@ const getAllAppointments = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+
 const getAppointmentsByUserId = async (req, res) => {
   try {
     const { userId } = req.params;
