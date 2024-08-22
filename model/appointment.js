@@ -1,5 +1,6 @@
 const mongoose = require("mongoose");
 const crypto = require("node:crypto");
+const Agents = require("../model/agents");
 
 const generateTicket = () => crypto.randomBytes(3).toString("hex");
 
@@ -88,7 +89,7 @@ const appointmentSchema = new mongoose.Schema(
 appointmentSchema.pre("save", async function (next) {
   try {
     if (this.referral && !this.franchise) {
-      const agent = await Agent.findById(this.referral).populate("franchise");
+      const agent = await Agents.findById(this.referral).populate("franchise");
       if (agent && agent.franchise) {
         this.franchise = agent.franchise._id;
       }

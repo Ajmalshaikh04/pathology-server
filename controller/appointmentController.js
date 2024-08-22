@@ -67,6 +67,90 @@ const SalesRange = require("../model/saleRange");
 //   }
 // };
 
+// const createAppointment = async (req, res) => {
+//   try {
+//     const {
+//       type,
+//       age,
+//       gender,
+//       problem,
+//       problemDescription,
+//       referral,
+//       lab: labContact,
+//       appointmentDate,
+//       tests: testContacts,
+//       commission,
+//       labs,
+//     } = req.body;
+
+//     let referralId = null;
+//     let labId = null;
+//     let testIds = [];
+
+//     // If referral is provided, find the agent
+//     if (referral) {
+//       const agent = await Agents.findOne({ contact: referral });
+//       if (agent) {
+//         referralId = agent._id;
+//       } else {
+//         console.log("No agent found with contact:", referral);
+//       }
+//     }
+
+//     // If lab is provided, find the lab
+//     if (labContact) {
+//       const lab = await DiagnosticLab.findOne({ contact: labContact });
+//       if (lab) {
+//         labId = lab._id;
+//       } else {
+//         console.log("No lab found with contact:", labContact);
+//       }
+//     }
+
+//     // If tests are provided, find the tests
+//     if (testContacts && testContacts.length > 0) {
+//       testIds = await Promise.all(
+//         testContacts.map(async (testContact) => {
+//           const test = await DiagnosticTest.findOne({
+//             contact: testContact,
+//           }).populate("labCategory");
+//           console.log(test);
+
+//           return test ? test._id : null;
+//         })
+//       );
+//       testIds = testIds.filter((testId) => testId !== null); // Remove null values
+//     }
+
+//     // Set createdByModel based on role
+//     const createdByModel =
+//       req.role === "superAdmin" || "councilor"
+//         ? "User"
+//         : req.role.charAt(0).toUpperCase() + req.role.slice(1);
+
+//     const newAppointment = new Appointment({
+//       type,
+//       age,
+//       gender,
+//       problem,
+//       problemDescription,
+//       referral: referralId,
+//       lab: labId,
+//       appointmentDate,
+//       tests: testIds,
+//       commission,
+//       createdBy: req.account,
+//       createdByModel,
+//       labs,
+//     });
+
+//     await newAppointment.save();
+//     res.status(201).json(newAppointment);
+//   } catch (error) {
+//     res.status(500).json({ message: error.message });
+//   }
+// };
+
 const createAppointment = async (req, res) => {
   try {
     const {
@@ -76,51 +160,54 @@ const createAppointment = async (req, res) => {
       problem,
       problemDescription,
       referral,
-      lab: labContact,
-      appointmentDate,
-      tests: testContacts,
-      commission,
       labs,
+      appointmentDate,
+      commission,
     } = req.body;
 
     let referralId = null;
-    let labId = null;
-    let testIds = [];
+    let totalAmount = 0;
 
     // If referral is provided, find the agent
     if (referral) {
-      const agent = await Agents.findOne({ contact: referral });
+      const agent = await Agents.findById(referral);
       if (agent) {
         referralId = agent._id;
       } else {
-        console.log("No agent found with contact:", referral);
+        console.log("No agent found with ID:", referral);
       }
     }
 
-    // If lab is provided, find the lab
-    if (labContact) {
-      const lab = await DiagnosticLab.findOne({ contact: labContact });
-      if (lab) {
-        labId = lab._id;
-      } else {
-        console.log("No lab found with contact:", labContact);
-      }
+    // Verify lab exists
+    if (!labs || !labs.lab) {
+      return res.status(400).json({ message: "Lab ID is required" });
+    }
+    const lab = await DiagnosticLab.findById(labs.lab);
+    if (!lab) {
+      return res.status(404).json({ message: "Lab not found" });
     }
 
-    // If tests are provided, find the tests
-    if (testContacts && testContacts.length > 0) {
-      testIds = await Promise.all(
-        testContacts.map(async (testContact) => {
-          const test = await DiagnosticTest.findOne({ contact: testContact });
-          return test ? test._id : null;
-        })
-      );
-      testIds = testIds.filter((testId) => testId !== null); // Remove null values
+    // Verify tests and calculate total amount
+    let tests = [];
+    if (labs.tests && labs.tests.length > 0) {
+      const testPromises = labs.tests.map(async ({ test: testId }) => {
+        const test = await DiagnosticTest.findById(testId);
+        if (test) {
+          totalAmount += test.price;
+          return {
+            test: test._id,
+            status: "Pending",
+          };
+        }
+        return null;
+      });
+
+      tests = (await Promise.all(testPromises)).filter((test) => test !== null);
     }
 
     // Set createdByModel based on role
     const createdByModel =
-      req.role === "superAdmin" || "councilor"
+      req.role === "superAdmin" || req.role === "councilor"
         ? "User"
         : req.role.charAt(0).toUpperCase() + req.role.slice(1);
 
@@ -131,13 +218,15 @@ const createAppointment = async (req, res) => {
       problem,
       problemDescription,
       referral: referralId,
-      lab: labId,
+      labs: {
+        lab: labs.lab,
+        tests: tests,
+      },
       appointmentDate,
-      tests: testIds,
       commission,
       createdBy: req.account,
       createdByModel,
-      labs,
+      totalAmount,
     });
 
     await newAppointment.save();
