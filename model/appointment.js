@@ -4,16 +4,13 @@ const crypto = require("node:crypto");
 const generateTicket = () => crypto.randomBytes(3).toString("hex");
 
 const testSchema = new mongoose.Schema({
-  test: { type: mongoose.Schema.Types.ObjectId, ref: "Test" },
+  test: { type: mongoose.Schema.Types.ObjectId, ref: "DiagnosticTest" },
   status: {
     type: String,
     enum: ["Pending", "In Progress", "Completed", "Closed"],
     default: "Pending",
   },
-  // updatedBy: {
-  //   type: mongoose.Schema.Types.ObjectId,
-  //   ref: "User",
-  // },
+
   updatedBy: {
     type: mongoose.Schema.Types.ObjectId,
     refPath: "updatedByModel",
@@ -32,10 +29,10 @@ const labSchema = new mongoose.Schema({
   tests: [testSchema],
 });
 
-const commissionSchema = new mongoose.Schema({
-  superAdminToFranchise: { type: Number, min: 0, max: 100, default: 20 },
-  superAdminToAgent: { type: Number, min: 0, max: 100, default: 20 },
-});
+// const commissionSchema = new mongoose.Schema({
+//   superAdminToFranchise: { type: Number, min: 0, max: 100, default: 20 },
+//   superAdminToAgent: { type: Number, min: 0, max: 100, default: 20 },
+// });
 
 const appointmentSchema = new mongoose.Schema(
   {
@@ -64,13 +61,43 @@ const appointmentSchema = new mongoose.Schema(
       type: String,
       enum: ["User", "Agent", "Franchise", "SuperAdmin"],
     },
-    commission: {
-      type: commissionSchema,
-      default: () => ({}),
+    franchise: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Franchise",
     },
+    commission: {
+      superAdminToAgent: {
+        type: Number,
+        default: function () {
+          return this.referral ? this.referral.commissionPercentage : 0;
+        },
+      },
+      superAdminToFranchise: {
+        type: Number,
+        default: function () {
+          return this.franchise ? this.franchise.commissionPercentage : 0;
+        },
+      },
+    },
+    totalAmount: { type: Number, required: true },
   },
   { timestamps: true }
 );
+
+// Middleware to set franchise based on the agent
+appointmentSchema.pre("save", async function (next) {
+  try {
+    if (this.referral && !this.franchise) {
+      const agent = await Agent.findById(this.referral).populate("franchise");
+      if (agent && agent.franchise) {
+        this.franchise = agent.franchise._id;
+      }
+    }
+    next();
+  } catch (err) {
+    next(err);
+  }
+});
 
 const Appointment = mongoose.model("Appointment", appointmentSchema);
 module.exports = Appointment;

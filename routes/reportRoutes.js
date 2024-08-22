@@ -12,7 +12,7 @@ const {
 router.post("/reports", createReport);
 
 // Get a single report by ID
-router.get("/reports/:id", getReport);
+router.get("/reports/:appointmentId", getReport);
 
 // Get all reports
 router.get("/reports", getAllReports);

@@ -7,6 +7,7 @@ const {
   getFranchiseById,
   updateFranchiseById,
   deleteFranchiseById,
+  setCommissionForSelectedFranchises,
 } = require("../controller/franchiseController.js");
 const { accountMiddleware } = require("../middleware/accoundvalidate");
 
@@ -51,5 +52,7 @@ router.delete(
 
   deleteFranchiseById
 );
+
+router.post("/franchises-commission", setCommissionForSelectedFranchises);
 
 module.exports = router;

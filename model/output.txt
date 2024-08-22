@@ -36,12 +36,13 @@ const crypto = require("node:crypto");
 const generateTicket = () => crypto.randomBytes(3).toString("hex");
 
 const testSchema = new mongoose.Schema({
-  test: { type: mongoose.Schema.Types.ObjectId, ref: "Test" },
+  test: { type: mongoose.Schema.Types.ObjectId, ref: "DiagnosticTest" },
   status: {
     type: String,
     enum: ["Pending", "In Progress", "Completed", "Closed"],
     default: "Pending",
   },
+
   updatedBy: {
     type: mongoose.Schema.Types.ObjectId,
     refPath: "updatedByModel",
@@ -96,6 +97,7 @@ const appointmentSchema = new mongoose.Schema(
       type: commissionSchema,
       default: () => ({}),
     },
+    totalAmount: { type: Number, required: true },
   },
   { timestamps: true }
 );
@@ -152,6 +154,7 @@ const DiagnosticLabSchema = new mongoose.Schema(
         ref: "DiagnosticTest",
       },
     ],
+    handleView: { type: Boolean, default: false },
     lastLogin: { type: Date },
     lastLogout: { type: Date },
   },
@@ -244,6 +247,9 @@ const LabCategoriesSchema = new mongoose.Schema({
   image: {
     type: String,
   },
+  profileImg: {
+    type: String,
+  },
 });
 
 const LabCategories = mongoose.model("LabCategories", LabCategoriesSchema);
@@ -279,10 +285,6 @@ const reportSchema = new mongoose.Schema(
       ref: "Appointment",
       required: true,
     },
-    generatedAt: {
-      type: Date,
-      default: Date.now,
-    },
     details: {
       type: String,
     },
@@ -298,6 +300,24 @@ module.exports = mongoose.model("Report", reportSchema);
 
 
 =======================================================================
+C:\ABS\Projects\pathology-server\model\saleRange.js
+
+// model/salesRange.js
+
+const mongoose = require("mongoose");
+
+const salesRangeSchema = new mongoose.Schema({
+  name: { type: String, required: true },
+  minAmount: { type: Number, required: true },
+  maxAmount: { type: Number, required: true },
+  franchiseCommissionPercentage: { type: Number, required: true },
+  agentCommissionPercentage: { type: Number, required: true },
+});
+
+module.exports = mongoose.model("SalesRange", salesRangeSchema);
+
+
+=======================================================================
 C:\ABS\Projects\pathology-server\model\userModel.js
 
 const mongoose = require("mongoose");
@@ -307,7 +327,7 @@ const User = new mongoose.Schema(
     name: {
       type: String,
       // required: true,
-      immutable: true,
+      // immutable: true,
     },
     mobile: {
       type: String,
@@ -338,11 +358,29 @@ const User = new mongoose.Schema(
       type: mongoose.Schema.Types.Mixed,
       default: {},
     },
+    profileImage: {
+      type: String,
+    },
     lastLogin: { type: Date },
     lastLogout: { type: Date },
   },
   { timestamps: true }
 );
+
+// Pre-save middleware to handle mutable name field
+User.pre("save", function (next) {
+  if (this.isModified("name")) {
+    this.schema.path("name").options.immutable = false; // Temporarily allow mutation
+  }
+  next();
+});
+
+User.post("save", function (doc, next) {
+  if (doc.isModified("name")) {
+    this.schema.path("name").options.immutable = true; // Restore immutability
+  }
+  next();
+});
 
 module.exports = mongoose.model("User", User);
 

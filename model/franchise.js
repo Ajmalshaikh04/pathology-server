@@ -30,6 +30,12 @@ const franchiseSchema = new mongoose.Schema(
     },
     lastLogin: { type: Date },
     lastLogout: { type: Date },
+    commissionPercentage: {
+      type: Number,
+      min: 0,
+      max: 100,
+      default: 20,
+    },
   },
   { timestamps: true }
 );

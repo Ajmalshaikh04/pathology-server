@@ -18,6 +18,12 @@ const {
   getLabsByLocation,
   getLabsWithTestsInProgress,
   findAppointmentsByLabAndTestStatus,
+  getAllReferralAppointments,
+  analyzeAppointments,
+  getFranchiseSalesCategories,
+  calculateAndDistributeCommissions,
+  distributeCommissions,
+  getUserAppointments,
 } = require("../controller/appointmentController");
 const {
   accountMiddleware,
@@ -41,7 +47,9 @@ router.get(
   getAllAppointmentsByFranchise
 );
 router.get("/appointments/superadmin", getAllAppointmentsBySuperAdmin);
+
 router.get("/appointments/user/:userId", getAppointmentsByUserId);
+router.get("/get-user-appointment", accountMiddleware, getUserAppointments);
 
 router.put(
   "/appointments/:appointmentId/labs/:labId/approve",
@@ -63,5 +71,13 @@ router.get("/location", getLabsByLocation);
 
 router.get("/get-labs-in-progress", getLabsWithTestsInProgress);
 router.get("/appointments/lab/:labId", findAppointmentsByLabAndTestStatus);
+
+// router.get("/analyze/:franchiseId", analyzeAppointments);
+
+router.get("/franchise/sales-categories", getFranchiseSalesCategories);
+
+router.get("/calculate-commissions", calculateAndDistributeCommissions);
+
+router.post("/distribute-commissions", distributeCommissions);
 
 module.exports = router;

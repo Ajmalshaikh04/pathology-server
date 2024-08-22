@@ -9,6 +9,8 @@ const {
   updateDiagnosticTestById,
   deleteDiagnosticTestById,
   deleteDiagnosticLabById,
+  toggleHandleView,
+  getHandleViewTrueLabs,
 } = require("../controller/diagnosticLabController");
 const { accountMiddleware } = require("../middleware/accoundvalidate");
 
@@ -37,5 +39,9 @@ router.delete(
   accountMiddleware,
   deleteDiagnosticTestById
 );
+
+router.put("/toggle-handle-view/:labId", accountMiddleware, toggleHandleView);
+
+router.get("/handle-view-labs", accountMiddleware, getHandleViewTrueLabs);
 
 module.exports = router;

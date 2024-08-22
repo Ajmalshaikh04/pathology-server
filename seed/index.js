@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const { faker } = require("@faker-js/faker");
 const bcrypt = require("bcrypt");
 const Location = require("../model/location");
 const Franchise = require("../model/franchise");
@@ -9,13 +10,13 @@ const User = require("../model/userModel");
 const Appointment = require("../model/appointment");
 const LabCategory = require("../model/labCategories");
 const Report = require("../model/report");
-console.log("Report model:", Report);
+const SalesRange = require("../model/saleRange");
 
 mongoose.connect(
   "mongodb+srv://shahzad201415:L6drIrBh0AYy97yN@cluster0.drcxrzd.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
 );
 
-// Function to hash password
+//// Function to hash password
 async function hashPassword(password) {
   const saltRounds = 10;
   return await bcrypt.hash(password, saltRounds);
@@ -562,6 +563,7 @@ const appointments = [
     commission: { superAdminToFranchise: 15, superAdminToAgent: 10 },
     updatedBy: null,
     updatedByModel: null,
+    totalAmount: 0,
   },
   {
     type: "Lab Test",
@@ -574,6 +576,7 @@ const appointments = [
     commission: { superAdminToFranchise: 18, superAdminToAgent: 12 },
     updatedBy: null,
     updatedByModel: null,
+    totalAmount: 0,
   },
   {
     type: "Lab Test",
@@ -586,6 +589,7 @@ const appointments = [
     commission: { superAdminToFranchise: 20, superAdminToAgent: 15 },
     updatedBy: null,
     updatedByModel: null,
+    totalAmount: 0,
   },
   {
     type: "Lab Test",
@@ -598,6 +602,7 @@ const appointments = [
     commission: { superAdminToFranchise: 17, superAdminToAgent: 11 },
     updatedBy: null,
     updatedByModel: null,
+    totalAmount: 0,
   },
   {
     type: "Lab Test",
@@ -610,6 +615,7 @@ const appointments = [
     commission: { superAdminToFranchise: 19, superAdminToAgent: 13 },
     updatedBy: null,
     updatedByModel: null,
+    totalAmount: 0,
   },
   {
     type: "Lab Test",
@@ -622,6 +628,7 @@ const appointments = [
     commission: { superAdminToFranchise: 16, superAdminToAgent: 10 },
     updatedBy: null,
     updatedByModel: null,
+    totalAmount: 0,
   },
   {
     type: "Lab Test",
@@ -634,6 +641,7 @@ const appointments = [
     commission: { superAdminToFranchise: 18, superAdminToAgent: 12 },
     updatedBy: null,
     updatedByModel: null,
+    totalAmount: 0,
   },
   {
     type: "Lab Test",
@@ -646,6 +654,7 @@ const appointments = [
     commission: { superAdminToFranchise: 20, superAdminToAgent: 14 },
     updatedBy: null,
     updatedByModel: null,
+    totalAmount: 0,
   },
   {
     type: "Lab Test",
@@ -658,6 +667,7 @@ const appointments = [
     commission: { superAdminToFranchise: 17, superAdminToAgent: 11 },
     updatedBy: null,
     updatedByModel: null,
+    totalAmount: 0,
   },
   {
     type: "Lab Test",
@@ -670,6 +680,7 @@ const appointments = [
     commission: { superAdminToFranchise: 22, superAdminToAgent: 15 },
     updatedBy: null,
     updatedByModel: null,
+    totalAmount: 0,
   },
 ];
 
@@ -784,28 +795,20 @@ async function seedDatabase() {
     const createdUsers = await User.insertMany(users);
     console.log("Users seeded");
 
-    // Update appointments with created IDs
-    // appointments.forEach((appointment, index) => {
-    //   appointment.referral = createdAgents[index % createdAgents.length]._id;
-    //   const lab = createdDiagnosticLabs[index % createdDiagnosticLabs.length];
-    //   appointment.labs = {
-    //     lab: lab._id,
-    //     tests: [],
-    //   };
+    function calculateTotalAmount(appointment, diagnosticTests) {
+      let totalAmount = 0;
 
-    //   // Assign 1-3 random tests from the lab's offered tests
-    //   const testCount = Math.floor(Math.random() * 3) + 1;
-    //   const labTests = getRandomTests(lab.testsOffered, testCount);
-    //   appointment.labs.tests = labTests.map((testId) => ({
-    //     test: testId,
-    //     status: ["Pending", "In Progress", "Completed"][
-    //       Math.floor(Math.random() * 3)
-    //     ],
-    //   }));
+      for (const testObj of appointment.labs.tests) {
+        const test = diagnosticTests.find(
+          (t) => t._id.toString() === testObj.test.toString()
+        );
+        if (test) {
+          totalAmount += test.price;
+        }
+      }
 
-    //   appointment.createdBy = createdUsers[index % createdUsers.length]._id;
-    //   appointment.createdByModel = "User";
-    // });
+      return totalAmount;
+    }
 
     appointments.forEach((appointment, index) => {
       // Set referral
@@ -861,6 +864,12 @@ async function seedDatabase() {
         };
       });
 
+      // Calculate total amount after setting up the tests
+      appointment.totalAmount = calculateTotalAmount(
+        appointment,
+        createdDiagnosticTests
+      );
+
       // Set other appointment fields (these remain unchanged)
       appointment.createdBy = createdUsers[index % createdUsers.length]._id;
       appointment.createdByModel = "User";
@@ -910,3 +919,735 @@ function getRandomTests(tests, count) {
 }
 
 seedDatabase();
+
+//=======================================
+
+// // Function to hash password
+// async function hashPassword(password) {
+//   const saltRounds = 10;
+//   return await bcrypt.hash(password, saltRounds);
+// }
+
+// // Generate 25 locations
+// const locations = Array.from({ length: 25 }, (_, i) => ({
+//   address: `${i + 1} Main Street`,
+//   city: ["Mumbai", "Delhi", "Bangalore", "Hyderabad", "Chennai"][i % 5],
+//   state: ["Maharashtra", "Delhi", "Karnataka", "Telangana", "Tamil Nadu"][
+//     i % 5
+//   ],
+//   pinCode: `${400000 + i}`,
+// }));
+
+// // Generate 25 franchises
+// const franchises = Array.from({ length: 25 }, (_, i) => ({
+//   name: `Franchise ${i + 1}`,
+//   contactNumber: `+91 98765432${i.toString().padStart(2, "0")}`,
+//   email: `franchise${i + 1}@example.com`,
+//   password: "12345", // This will be hashed later
+//   role: "franchise",
+//   lastLogin: new Date(),
+//   lastLogout: new Date(),
+// }));
+
+// // Generate 25 agents
+// const agents = Array.from({ length: 25 }, (_, i) => ({
+//   name: `Agent ${i + 1}`,
+//   email: `agent${i + 1}@example.com`,
+//   password: "12345", // This will be hashed later
+//   contact: `+91 87654321${i.toString().padStart(2, "0")}`,
+//   role: "agent",
+//   lastLogin: new Date(),
+//   lastLogout: new Date(),
+// }));
+
+// // Generate 25 lab categories
+// const labCategories = Array.from({ length: 25 }, (_, i) => ({
+//   name: `Lab Category ${i + 1}`,
+//   image: `https://example.com/images/category${i + 1}.jpg`,
+// }));
+
+// // Generate 25 diagnostic tests
+// const diagnosticTests = Array.from({ length: 25 }, (_, i) => ({
+//   description: `Diagnostic Test ${i + 1}`,
+//   price: 500 + i * 100,
+//   labCategory: null, // Will be updated later
+// }));
+
+// // Generate 25 diagnostic labs
+// const diagnosticLabs = Array.from({ length: 25 }, (_, i) => ({
+//   name: `Diagnostic Lab ${i + 1}`,
+//   email: `lab${i + 1}@example.com`,
+//   contactNumber: `+91 76543210${i.toString().padStart(2, "0")}`,
+//   password: "12345", // This will be hashed later
+//   role: "lab",
+//   isLabLogIn: false,
+//   handleView: false,
+//   lastLogin: new Date(),
+//   lastLogout: new Date(),
+// }));
+
+// // Generate 25 users
+// const users = Array.from({ length: 25 }, (_, i) => ({
+//   name: `User ${i + 1}`,
+//   mobile: `+91 65432109${i.toString().padStart(2, "0")}`,
+//   email: `user${i + 1}@example.com`,
+//   password: "12345", // This will be hashed later
+//   otp: "123456",
+//   role: ["user", "councilor", "superAdmin"][i % 3],
+//   assignedCounselor: null,
+//   adminDetails: {},
+//   profileImage: "",
+//   lastLogin: new Date(),
+//   lastLogout: new Date(),
+// }));
+
+// // Generate 25 appointments
+// const appointments = Array.from({ length: 25 }, (_, i) => ({
+//   type: "Lab Test",
+//   age: 20 + i,
+//   gender: i % 2 === 0 ? "Male" : "Female",
+//   problem: `Health Issue ${i + 1}`,
+//   problemDescription: `Description for health issue ${i + 1}`,
+//   status: ["Pending", "Approve", "Reject"][i % 3],
+//   appointmentDate: new Date(Date.now() + i * 86400000), // Each appointment is a day apart
+//   commission: {
+//     superAdminToFranchise: 15 + (i % 10),
+//     superAdminToAgent: 10 + (i % 10),
+//   },
+// }));
+
+// // Generate 25 reports
+// const reports = Array.from({ length: 25 }, (_, i) => ({
+//   details: `Report details for Test ${i + 1}`,
+//   file: `https://example.com/reports/report${i + 1}.pdf`,
+// }));
+
+// async function seedDatabase() {
+//   try {
+//     // // Connect to MongoDB
+//     // await mongoose.connect("your_mongodb_connection_string_here", {
+//     //   useNewUrlParser: true,
+//     //   useUnifiedTopology: true,
+//     // });
+
+//     // Hash the password
+//     const hashedPassword = await hashPassword("12345");
+
+//     // Update passwords in all entities
+//     franchises.forEach((franchise) => (franchise.password = hashedPassword));
+//     agents.forEach((agent) => (agent.password = hashedPassword));
+//     diagnosticLabs.forEach((lab) => (lab.password = hashedPassword));
+//     users.forEach((user) => (user.password = hashedPassword));
+
+//     // Clear existing data
+// await Location.deleteMany({});
+// await Franchise.deleteMany({});
+// await Agent.deleteMany({});
+// await DiagnosticTest.deleteMany({});
+// await DiagnosticLab.deleteMany({});
+// await User.deleteMany({});
+// await Appointment.deleteMany({});
+// await LabCategory.deleteMany({});
+// await Report.deleteMany({});
+
+//     // Insert new data
+//     const createdLocations = await Location.insertMany(locations);
+//     const createdLabCategories = await LabCategory.insertMany(labCategories);
+
+//     // Update diagnostic tests with created lab category IDs
+//     diagnosticTests.forEach((test, index) => {
+//       test.labCategory = createdLabCategories[index]._id;
+//     });
+//     const createdDiagnosticTests = await DiagnosticTest.insertMany(
+//       diagnosticTests
+//     );
+
+//     // Update franchises with created location IDs
+//     franchises.forEach((franchise, index) => {
+//       franchise.location = createdLocations[index]._id;
+//     });
+//     const createdFranchises = await Franchise.insertMany(franchises);
+
+//     // Update agents with created location and franchise IDs
+//     agents.forEach((agent, index) => {
+//       agent.location = createdLocations[index]._id;
+//       agent.franchise = createdFranchises[index]._id;
+//     });
+//     const createdAgents = await Agent.insertMany(agents);
+
+//     // Update diagnostic labs with created location IDs and test IDs
+//     diagnosticLabs.forEach((lab, index) => {
+//       lab.address = createdLocations[index]._id;
+//       lab.testsOffered = createdDiagnosticTests
+//         .slice(0, 10)
+//         .map((test) => test._id); // Assign first 10 tests to each lab
+//     });
+//     const createdDiagnosticLabs = await DiagnosticLab.insertMany(
+//       diagnosticLabs
+//     );
+
+//     const createdUsers = await User.insertMany(users);
+
+//     // Update appointments
+//     appointments.forEach((appointment, index) => {
+//       appointment.referral = createdAgents[index % createdAgents.length]._id;
+//       appointment.labs = {
+//         lab: createdDiagnosticLabs[index % createdDiagnosticLabs.length]._id,
+//         tests: createdDiagnosticTests.slice(0, 5).map((test) => ({
+//           test: test._id,
+//           status: ["Pending", "In Progress", "Completed", "Closed"][index % 4],
+//           updatedBy: createdUsers[index % createdUsers.length]._id,
+//           updatedByModel: "User",
+//           updatedAt: new Date(),
+//         })),
+//       };
+//       appointment.createdBy = createdUsers[index % createdUsers.length]._id;
+//       appointment.createdByModel = "User";
+//     });
+//     const createdAppointments = await Appointment.insertMany(appointments);
+
+//     // Update reports with appointment IDs
+//     reports.forEach((report, index) => {
+//       report.appointment = createdAppointments[index]._id;
+//     });
+//     await Report.insertMany(reports);
+
+//     console.log("Database seeded successfully with 25 entries for each model");
+//   } catch (error) {
+//     console.error("Error seeding database:", error);
+//   } finally {
+//     await mongoose.disconnect();
+//   }
+// }
+
+// seedDatabase();
+//=============================================================
+
+// mongoose.connect(
+//   "mongodb+srv://shahzad201415:L6drIrBh0AYy97yN@cluster0.drcxrzd.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
+// );
+
+// const PASSWORD = "12345";
+// const hashedPassword = bcrypt.hashSync(PASSWORD, 10);
+
+// async function seedData() {
+//   try {
+//     await mongoose.connection.dropDatabase();
+
+//     await Location.deleteMany({});
+//     await Franchise.deleteMany({});
+//     await Agent.deleteMany({});
+//     await DiagnosticTest.deleteMany({});
+//     await DiagnosticLab.deleteMany({});
+//     await User.deleteMany({});
+//     await Appointment.deleteMany({});
+//     await LabCategory.deleteMany({});
+//     await Report.deleteMany({});
+//     await SalesRange.deleteMany({});
+//     // Seed Locations
+//     const locations = [];
+//     for (let i = 0; i < 100; i++) {
+//       const location = new Location({
+//         address: faker.address.streetAddress(),
+//         city: faker.address.city(),
+//         state: faker.address.state(),
+//         pinCode: faker.address.zipCode(),
+//       });
+//       locations.push(location);
+//     }
+//     await Location.insertMany(locations);
+
+//     // Seed Franchises
+//     const franchises = [];
+//     for (let i = 0; i < 50; i++) {
+//       const franchise = new Franchise({
+//         name: faker.company.name(),
+//         contactNumber: faker.phone.number(),
+//         email: faker.internet.email(),
+//         password: hashedPassword,
+//         location: faker.helpers.arrayElement(locations)._id,
+//       });
+//       franchises.push(franchise);
+//     }
+//     await Franchise.insertMany(franchises);
+
+//     // Seed Users
+//     const users = [];
+//     for (let i = 0; i < 100; i++) {
+//       const user = new User({
+//         name: faker.name.fullName(),
+//         mobile: faker.phone.number(),
+//         email: faker.internet.email(),
+//         password: hashedPassword,
+//         otp: faker.random.alphaNumeric(6),
+//         role: faker.helpers.arrayElement(["user", "councilor", "superAdmin"]),
+//       });
+//       users.push(user);
+//     }
+//     await User.insertMany(users);
+
+//     // Seed Agents
+//     const agents = [];
+//     for (let i = 0; i < 500; i++) {
+//       const agent = new Agent({
+//         name: faker.name.fullName(),
+//         email: faker.internet.email(),
+//         password: hashedPassword,
+//         contact: faker.phone.number(),
+//         location: faker.helpers.arrayElement(locations)._id,
+//         franchise: faker.helpers.arrayElement(franchises)._id,
+//       });
+//       agents.push(agent);
+//     }
+//     await Agent.insertMany(agents);
+
+//     // Seed Lab Categories
+//     const labCategories = [];
+//     for (let i = 0; i < 20; i++) {
+//       const category = new LabCategory({
+//         name: faker.commerce.department(),
+//       });
+//       labCategories.push(category);
+//     }
+//     await LabCategory.insertMany(labCategories);
+
+//     // Seed Diagnostic Labs and Tests
+//     const labs = [];
+//     const tests = [];
+//     for (let i = 0; i < 200; i++) {
+//       const lab = new DiagnosticLab({
+//         name: faker.company.name(),
+//         email: faker.internet.email(),
+//         address: faker.helpers.arrayElement(locations)._id,
+//         contactNumber: faker.phone.number(),
+//         password: hashedPassword,
+//       });
+//       labs.push(lab);
+
+//       for (let j = 0; j < 10; j++) {
+//         const test = new DiagnosticTest({
+//           description: faker.lorem.sentence(),
+//           price: faker.commerce.price(200, 3000),
+//           labCategory: faker.helpers.arrayElement(labCategories)._id,
+//         });
+//         tests.push(test);
+//       }
+//     }
+//     await DiagnosticLab.insertMany(labs);
+//     await DiagnosticTest.insertMany(tests);
+
+//     // Seed Sales Ranges
+//     const salesRanges = [
+//       {
+//         name: "0 to 5 Lakh",
+//         minAmount: 0,
+//         maxAmount: 500000,
+//         franchiseCommissionPercentage: 10,
+//         agentCommissionPercentage: 5,
+//       },
+//       {
+//         name: "5 to 10 Lakh",
+//         minAmount: 500001,
+//         maxAmount: 1000000,
+//         franchiseCommissionPercentage: 12,
+//         agentCommissionPercentage: 6,
+//       },
+//       {
+//         name: "10 to 15 Lakh",
+//         minAmount: 1000001,
+//         maxAmount: 1500000,
+//         franchiseCommissionPercentage: 14,
+//         agentCommissionPercentage: 7,
+//       },
+//       {
+//         name: "15 to 20 Lakh",
+//         minAmount: 1500001,
+//         maxAmount: 2000000,
+//         franchiseCommissionPercentage: 14,
+//         agentCommissionPercentage: 7,
+//       },
+//     ];
+//     await SalesRange.insertMany(salesRanges);
+
+//     // // Seed Appointments
+//     // const appointments = [];
+//     // const startDate = new Date(2023, 0, 1); // January 1, 2023
+//     // const endDate = new Date(); // Current date
+//     // const dayRange = (endDate - startDate) / (1000 * 60 * 60 * 24);
+
+//     // for (let i = 0; i < 1000; i++) {
+//     //   const appointmentDate = new Date(
+//     //     startDate.getTime() +
+//     //       Math.random() * (endDate.getTime() - startDate.getTime())
+//     //   );
+
+//     //   // Select a random number of tests (1 to 5) for this appointment
+//     //   const numTests = Math.floor(Math.random() * 5) + 1;
+//     //   const appointmentTests = [];
+//     //   let totalAmount = 0;
+
+//     //   for (let j = 0; j < numTests; j++) {
+//     //     const randomTest = faker.helpers.arrayElement(tests);
+//     //     appointmentTests.push({
+//     //       test: randomTest._id,
+//     //       status: "Closed",
+//     //     });
+//     //     totalAmount += randomTest.price;
+//     //   }
+
+//     //   const appointment = new Appointment({
+//     //     type: faker.lorem.word(),
+//     //     age: faker.datatype.number({ min: 18, max: 65 }),
+//     //     gender: faker.helpers.arrayElement(["Male", "Female", "Other"]),
+//     //     problem: faker.lorem.sentence(),
+//     //     problemDescription: faker.lorem.paragraph(),
+//     //     referral: faker.helpers.arrayElement(agents)._id,
+//     //     labs: {
+//     //       lab: faker.helpers.arrayElement(labs)._id,
+//     //       tests: appointmentTests,
+//     //     },
+//     //     status: faker.helpers.arrayElement(["Pending", "Approve", "Reject"]),
+//     //     appointmentDate: appointmentDate,
+//     //     createdBy: faker.helpers.arrayElement(users)._id,
+//     //     createdByModel: faker.helpers.arrayElement([
+//     //       "User",
+//     //       // "Agent",
+//     //       // "Franchise",
+//     //       // "SuperAdmin",
+//     //     ]),
+//     //     commission: {
+//     //       superAdminToFranchise: faker.datatype.number({ min: 0, max: 100 }),
+//     //       superAdminToAgent: faker.datatype.number({ min: 0, max: 100 }),
+//     //     },
+//     //     totalAmount: totalAmount, // Set total amount based on sum of test prices
+//     //   });
+//     //   appointments.push(appointment);
+//     // }
+//     // await Appointment.insertMany(appointments);
+
+//     // Seed Appointments
+//     const appointments = [];
+
+//     // Set the start and end date to cover a 3-month period
+//     const startDate = new Date(2023, 0, 1); // January 1, 2023
+//     const endDate = new Date(
+//       startDate.getFullYear(),
+//       startDate.getMonth() + 3,
+//       startDate.getDate()
+//     ); // 3 months after start date
+
+//     for (let i = 0; i < 1000; i++) {
+//       const appointmentDate = new Date(
+//         startDate.getTime() +
+//           Math.random() * (endDate.getTime() - startDate.getTime())
+//       );
+
+//       // Select a random number of tests (1 to 5) for this appointment
+//       const numTests = Math.floor(Math.random() * 5) + 1;
+//       const appointmentTests = [];
+//       let totalAmount = 0;
+
+//       for (let j = 0; j < numTests; j++) {
+//         const randomTest = faker.helpers.arrayElement(tests);
+//         appointmentTests.push({
+//           test: randomTest._id,
+//           status: "Closed",
+//         });
+//         totalAmount += randomTest.price;
+//       }
+
+//       const appointment = new Appointment({
+//         type: faker.lorem.word(),
+//         age: faker.datatype.number({ min: 18, max: 65 }),
+//         gender: faker.helpers.arrayElement(["Male", "Female", "Other"]),
+//         problem: faker.lorem.sentence(),
+//         problemDescription: faker.lorem.paragraph(),
+//         referral: faker.helpers.arrayElement(agents)._id,
+//         labs: {
+//           lab: faker.helpers.arrayElement(labs)._id,
+//           tests: appointmentTests,
+//         },
+//         status: faker.helpers.arrayElement(["Approve"]),
+//         appointmentDate: appointmentDate,
+//         createdBy: faker.helpers.arrayElement(users)._id,
+//         createdByModel: faker.helpers.arrayElement([
+//           "User",
+//           // "Agent",
+//           // "Franchise",
+//           // "SuperAdmin",
+//         ]),
+//         commission: {
+//           superAdminToFranchise: faker.datatype.number({ min: 0, max: 100 }),
+//           superAdminToAgent: faker.datatype.number({ min: 0, max: 100 }),
+//         },
+//         totalAmount: totalAmount, // Set total amount based on sum of test prices
+//       });
+//       appointments.push(appointment);
+//     }
+//     await Appointment.insertMany(appointments);
+
+//     // Seed Reports
+//     const reports = [];
+//     for (let i = 0; i < 500; i++) {
+//       const report = new Report({
+//         appointment: faker.helpers.arrayElement(appointments)._id,
+//         details: faker.lorem.paragraph(),
+//         file: faker.system.filePath(),
+//       });
+//       reports.push(report);
+//     }
+//     await Report.insertMany(reports);
+
+//     console.log("Data seeded successfully");
+//   } catch (error) {
+//     console.error("Error seeding data:", error);
+//   } finally {
+//     mongoose.connection.close();
+//   }
+// }
+
+// seedData();
+//=========
+
+// async function seedData() {
+//   try {
+//     await mongoose.connection.dropDatabase();
+
+//     await Location.deleteMany({});
+//     await Franchise.deleteMany({});
+//     await Agent.deleteMany({});
+//     await DiagnosticTest.deleteMany({});
+//     await DiagnosticLab.deleteMany({});
+//     await User.deleteMany({});
+//     await Appointment.deleteMany({});
+//     await LabCategory.deleteMany({});
+//     await Report.deleteMany({});
+//     await SalesRange.deleteMany({});
+
+//     // Seed Locations
+//     const locations = [];
+//     for (let i = 0; i < 100; i++) {
+//       const location = new Location({
+//         address: faker.address.streetAddress(),
+//         city: faker.address.city(),
+//         state: faker.address.state(),
+//         pinCode: faker.address.zipCode(),
+//       });
+//       locations.push(location);
+//     }
+//     await Location.insertMany(locations);
+
+//     // Seed Franchises
+//     const franchises = [];
+//     for (let i = 0; i < 50; i++) {
+//       const franchise = new Franchise({
+//         name: faker.company.name(),
+//         contactNumber: faker.phone.number(),
+//         email: faker.internet.email(),
+//         password: hashedPassword,
+//         location: faker.helpers.arrayElement(locations)._id,
+//       });
+//       franchises.push(franchise);
+//     }
+//     await Franchise.insertMany(franchises);
+
+//     // Seed Users
+//     const users = [];
+//     for (let i = 0; i < 100; i++) {
+//       const user = new User({
+//         name: faker.name.fullName(),
+//         mobile: faker.phone.number(),
+//         email: faker.internet.email(),
+//         password: hashedPassword,
+//         otp: faker.random.alphaNumeric(6),
+//         role: faker.helpers.arrayElement(["user", "councilor", "superAdmin"]),
+//       });
+//       users.push(user);
+//     }
+//     await User.insertMany(users);
+
+//     // Seed Agents
+//     const agents = [];
+//     for (let i = 0; i < 500; i++) {
+//       const agent = new Agent({
+//         name: faker.name.fullName(),
+//         email: faker.internet.email(),
+//         password: hashedPassword,
+//         contact: faker.phone.number(),
+//         location: faker.helpers.arrayElement(locations)._id,
+//         franchise: faker.helpers.arrayElement(franchises)._id,
+//       });
+//       agents.push(agent);
+//     }
+//     await Agent.insertMany(agents);
+
+//     // Seed Lab Categories
+//     const labCategories = [];
+//     for (let i = 0; i < 20; i++) {
+//       const category = new LabCategory({
+//         name: faker.commerce.department(),
+//       });
+//       labCategories.push(category);
+//     }
+//     await LabCategory.insertMany(labCategories);
+
+//     // Seed Diagnostic Labs and Tests
+//     const labs = [];
+//     const tests = [];
+//     for (let i = 0; i < 200; i++) {
+//       const lab = new DiagnosticLab({
+//         name: faker.company.name(),
+//         email: faker.internet.email(),
+//         address: faker.helpers.arrayElement(locations)._id,
+//         contactNumber: faker.phone.number(),
+//         password: hashedPassword,
+//       });
+//       labs.push(lab);
+
+//       for (let j = 0; j < 10; j++) {
+//         const test = new DiagnosticTest({
+//           description: faker.lorem.sentence(),
+//           price: faker.commerce.price(200, 3000),
+//           labCategory: faker.helpers.arrayElement(labCategories)._id,
+//         });
+//         tests.push(test);
+//       }
+//     }
+//     await DiagnosticLab.insertMany(labs);
+//     await DiagnosticTest.insertMany(tests);
+
+//     // Seed Sales Ranges
+//     const salesRanges = [
+//       {
+//         name: "0 to 5 Lakh",
+//         minAmount: 0,
+//         maxAmount: 500000,
+//         franchiseCommissionPercentage: 10,
+//         agentCommissionPercentage: 5,
+//       },
+//       {
+//         name: "5 to 10 Lakh",
+//         minAmount: 500001,
+//         maxAmount: 1000000,
+//         franchiseCommissionPercentage: 12,
+//         agentCommissionPercentage: 6,
+//       },
+//       {
+//         name: "10 to 15 Lakh",
+//         minAmount: 1000001,
+//         maxAmount: 1500000,
+//         franchiseCommissionPercentage: 14,
+//         agentCommissionPercentage: 7,
+//       },
+//       {
+//         name: "15 to 20 Lakh",
+//         minAmount: 1500001,
+//         maxAmount: 2000000,
+//         franchiseCommissionPercentage: 14,
+//         agentCommissionPercentage: 7,
+//       },
+//     ];
+//     await SalesRange.insertMany(salesRanges);
+
+//     // Seed Appointments
+//     const appointments = [];
+//     const months = [
+//       {
+//         month: "April",
+//         start: new Date(2024, 3, 1),
+//         end: new Date(2024, 3, 30),
+//       },
+//       {
+//         month: "May",
+//         start: new Date(2024, 4, 1),
+//         end: new Date(2024, 4, 31),
+//       },
+//       {
+//         month: "June",
+//         start: new Date(2024, 5, 1),
+//         end: new Date(2024, 5, 30),
+//       },
+//       {
+//         month: "July",
+//         start: new Date(2024, 6, 1),
+//         end: new Date(2024, 6, 31),
+//       },
+//     ];
+
+//     for (const month of months) {
+//       for (let i = 0; i < 200; i++) {
+//         // Randomly select a sales range
+//         const range = faker.helpers.arrayElement(salesRanges);
+//         const minAmount = range.minAmount;
+//         const maxAmount = range.maxAmount;
+
+//         const appointmentDate = faker.date.between(month.start, month.end);
+
+//         // Select a random number of tests (1 to 5) for this appointment
+//         const numTests = Math.floor(Math.random() * 5) + 1;
+//         const appointmentTests = [];
+//         let totalAmount = 0;
+
+//         for (let j = 0; j < numTests; j++) {
+//           const randomTest = faker.helpers.arrayElement(tests);
+//           appointmentTests.push({
+//             test: randomTest._id,
+//             status: faker.helpers.arrayElement(["Closed", "Completed"]),
+//           });
+//           totalAmount += randomTest.price;
+//         }
+
+//         // Ensure the total amount fits within the selected range
+//         if (totalAmount < minAmount) {
+//           totalAmount = minAmount;
+//         } else if (totalAmount > maxAmount) {
+//           totalAmount = maxAmount;
+//         }
+
+//         const appointment = new Appointment({
+//           type: faker.lorem.word(),
+//           age: faker.datatype.number({ min: 18, max: 65 }),
+//           gender: faker.helpers.arrayElement(["Male", "Female", "Other"]),
+//           problem: faker.lorem.sentence(),
+//           problemDescription: faker.lorem.paragraph(),
+//           referral: faker.helpers.arrayElement(agents)._id,
+//           labs: {
+//             lab: faker.helpers.arrayElement(labs)._id,
+//             tests: appointmentTests,
+//           },
+//           status: faker.helpers.arrayElement(["Approve"]),
+//           appointmentDate: appointmentDate,
+//           createdBy: faker.helpers.arrayElement(users)._id,
+//           createdByModel: faker.helpers.arrayElement(["User"]),
+//           commission: {
+//             superAdminToFranchise: faker.datatype.number({ min: 0, max: 100 }),
+//             superAdminToAgent: faker.datatype.number({ min: 0, max: 100 }),
+//           },
+//           totalAmount: totalAmount, // Set total amount based on range
+//         });
+//         appointments.push(appointment);
+//       }
+//     }
+//     await Appointment.insertMany(appointments);
+
+//     // Seed Reports
+//     const reports = [];
+//     for (let i = 0; i < 500; i++) {
+//       const report = new Report({
+//         appointment: faker.helpers.arrayElement(appointments)._id,
+//         details: faker.lorem.paragraph(),
+//         file: faker.system.filePath(),
+//       });
+//       reports.push(report);
+//     }
+//     await Report.insertMany(reports);
+
+//     console.log("Data seeded successfully");
+//   } catch (error) {
+//     console.error("Error seeding data:", error);
+//   } finally {
+//     mongoose.connection.close();
+//   }
+// }
+
+// seedData();

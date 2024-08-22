@@ -73,23 +73,67 @@ const createDiagnosticLab = async (req, res) => {
   }
 };
 
+// const getAllDiagnosticLabs = async (req, res) => {
+//   try {
+//     // Create a new instance of APIFeatures
+//     const features = new APIFeatures(
+//       DiagnosticLab.find().select("-password"),
+//       req.query
+//     )
+//       .search()
+//       .filter();
+//     // .sort()
+//     // .limitFields();
+//     console.log(req.query);
+//     // Apply pagination after other operations
+//     const paginatedFeatures = features.paginate();
+
+//     // Execute the query with population
+//     const labs = await paginatedFeatures.query
+//       .populate({
+//         path: "testsOffered",
+//         populate: {
+//           path: "labCategory",
+//           model: "LabCategories",
+//         },
+//       })
+//       .populate("address")
+//       .exec();
+
+//     // Get total count for pagination info
+//     const totalLabs = await DiagnosticLab.countDocuments(
+//       features.query._conditions
+//     );
+
+//     res.status(200).json({
+//       success: true,
+//       message: "List of all labs",
+//       results: labs.length,
+//       totalLabs,
+//       data: labs,
+//       pagination: {
+//         currentPage: paginatedFeatures.queryString.page * 1 || 1,
+//         limit: paginatedFeatures.queryString.limit * 1 || 20,
+//         totalPages: Math.ceil(
+//           totalLabs / (paginatedFeatures.queryString.limit * 1 || 20)
+//         ),
+//       },
+//     });
+//   } catch (error) {
+//     console.error("Error fetching diagnostic labs:", error);
+//     res.status(500).json({ success: false, message: "Server error" });
+//   }
+// };
+
 const getAllDiagnosticLabs = async (req, res) => {
   try {
-    // Create a new instance of APIFeatures
-    const features = new APIFeatures(
-      DiagnosticLab.find().select("-password"),
-      req.query
-    )
-      .search()
-      .filter();
-    // .sort()
-    // .limitFields();
-    console.log(req.query);
-    // Apply pagination after other operations
-    const paginatedFeatures = features.paginate();
-
-    // Execute the query with population
-    const labs = await paginatedFeatures.query
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+    console.log("Backend received:", { page, limit, skip });
+    const totalLabs = await DiagnosticLab.countDocuments();
+    const labs = await DiagnosticLab.find()
+      .select("-password")
       .populate({
         path: "testsOffered",
         populate: {
@@ -98,25 +142,28 @@ const getAllDiagnosticLabs = async (req, res) => {
         },
       })
       .populate("address")
+      .skip(skip)
+      .limit(limit)
       .exec();
 
-    // Get total count for pagination info
-    const totalLabs = await DiagnosticLab.countDocuments(
-      features.query._conditions
-    );
-
+    console.log("Backend sending:", {
+      labsCount: labs.length,
+      totalLabs,
+      pagination: {
+        currentPage: page,
+        limit: limit,
+        totalPages: Math.ceil(totalLabs / limit),
+      },
+    });
     res.status(200).json({
       success: true,
       message: "List of all labs",
-      results: labs.length,
-      totalLabs,
       data: labs,
+      totalLabs,
       pagination: {
-        currentPage: paginatedFeatures.queryString.page * 1 || 1,
-        limit: paginatedFeatures.queryString.limit * 1 || 20,
-        totalPages: Math.ceil(
-          totalLabs / (paginatedFeatures.queryString.limit * 1 || 20)
-        ),
+        currentPage: page,
+        limit: limit,
+        totalPages: Math.ceil(totalLabs / limit),
       },
     });
   } catch (error) {
@@ -379,6 +426,47 @@ const updateDiagnosticTestById = async (req, res) => {
   }
 };
 
+const toggleHandleView = async (req, res) => {
+  try {
+    const labId = req.params.labId;
+
+    // Find the lab by ID
+    const lab = await DiagnosticLab.findById(labId);
+    if (!lab) {
+      return res.status(404).json({ message: "Diagnostic lab not found" });
+    }
+
+    // Toggle the handleView status
+    lab.handleView = !lab.handleView;
+    await lab.save();
+
+    return res.status(200).json({
+      message: "handleView status updated successfully",
+      handleView: lab.handleView,
+    });
+  } catch (error) {
+    return res
+      .status(500)
+      .json({ message: "Server error", error: error.message });
+  }
+};
+
+const getHandleViewTrueLabs = async (req, res) => {
+  try {
+    const labs = await DiagnosticLab.find({ handleView: true });
+
+    if (labs.length === 0) {
+      return res
+        .status(404)
+        .json({ message: "No labs found with handleView true" });
+    }
+
+    res.status(200).json(labs);
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
 module.exports = {
   getAllDiagnosticLabs,
   getDiagnosticLabById,
@@ -388,4 +476,6 @@ module.exports = {
   deleteDiagnosticTestById,
   updateDiagnosticTestById,
   deleteDiagnosticLabById,
+  toggleHandleView,
+  getHandleViewTrueLabs,
 };

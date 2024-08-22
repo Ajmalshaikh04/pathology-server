@@ -43,6 +43,7 @@ const DiagnosticLabSchema = new mongoose.Schema(
         ref: "DiagnosticTest",
       },
     ],
+    handleView: { type: Boolean, default: false },
     lastLogin: { type: Date },
     lastLogout: { type: Date },
   },

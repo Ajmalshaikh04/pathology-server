@@ -52,7 +52,10 @@ async function createReport(req, res) {
 
 async function getReport(req, res) {
   try {
-    const report = await Report.findById(req.params.id).populate("appointment");
+    const { appointmentId } = req.params;
+
+    const report = await Report.findOne({ appointment: appointmentId });
+
     if (!report) {
       return res.status(404).json({ message: "Report not found" });
     }

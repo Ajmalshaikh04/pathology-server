@@ -53,7 +53,7 @@ const logOutUser = async (req, res) => {
     const userId = req.account;
     console.log(userId);
 
-    const user = await User.findOneAndUpdate(userId);
+    const user = await User.findOneAndUpdate(userId).select("-password -otp");
 
     if (!user) {
       return res.status(404).json({
@@ -65,7 +65,7 @@ const logOutUser = async (req, res) => {
     return res.status(200).json({
       success: true,
       message: "User logged out successfully",
-      data: user,
+      // data: user,
     });
   } catch (err) {
     console.error(err);
@@ -493,6 +493,47 @@ const registerAdmin = async (req, res) => {
   }
 };
 
+// const getAllUsers = async (req, res) => {
+//   try {
+//     // Create a new instance of APIFeatures
+//     const features = new APIFeatures(
+//       User.find({ role: "user" }).populate("assignedCounselor"),
+//       req.query
+//     )
+//       .search()
+//       .filter()
+//       .sort()
+//       .limitFields()
+//       .paginate();
+
+//     // Execute the query
+//     const users = await features.query;
+
+//     // Get total count for pagination info
+//     const totalUsers = await User.countDocuments(features.query._conditions);
+
+//     res.status(200).json({
+//       success: true,
+//       results: users.length,
+//       totalUsers,
+//       data: users,
+//       pagination: {
+//         currentPage: features.queryString.page * 1 || 1,
+//         limit: features.queryString.limit * 1 || 20,
+//         totalPages: Math.ceil(
+//           totalUsers / (features.queryString.limit * 1 || 20)
+//         ),
+//       },
+//     });
+//   } catch (error) {
+//     console.error("Error fetching users:", error);
+//     res.status(500).json({
+//       success: false,
+//       message: "An error occurred while fetching users.",
+//     });
+//   }
+// };
+
 const getAllUsers = async (req, res) => {
   try {
     // Create a new instance of APIFeatures
@@ -519,9 +560,9 @@ const getAllUsers = async (req, res) => {
       data: users,
       pagination: {
         currentPage: features.queryString.page * 1 || 1,
-        limit: features.queryString.limit * 1 || 20,
+        limit: features.queryString.limit * 1 || 10,
         totalPages: Math.ceil(
-          totalUsers / (features.queryString.limit * 1 || 20)
+          totalUsers / (features.queryString.limit * 1 || 10)
         ),
       },
     });
@@ -533,24 +574,105 @@ const getAllUsers = async (req, res) => {
     });
   }
 };
+
+// const getAllCouncilors = async (req, res) => {
+//   try {
+//     // Create a new instance of APIFeatures
+//     const features = new APIFeatures(
+//       User.find({ role: "councilor" }),
+//       req.query
+//     )
+//       .search()
+//       .filter()
+//       .sort()
+//       .limitFields()
+//       .paginate();
+
+//     // Execute the query
+//     const users = await features.query;
+
+//     // Get total count for pagination info
+//     const totalUsers = await User.countDocuments(features.query._conditions);
+
+//     res.status(200).json({
+//       success: true,
+//       results: users.length,
+//       totalUsers,
+//       data: users,
+//       pagination: {
+//         currentPage: features.queryString.page * 1 || 1,
+//         limit: features.queryString.limit * 1 || 20,
+//         totalPages: Math.ceil(
+//           totalUsers / (features.queryString.limit * 1 || 20)
+//         ),
+//       },
+//     });
+//   } catch (error) {
+//     console.error("Error fetching users:", error);
+//     res.status(500).json({
+//       success: false,
+//       message: "An error occurred while fetching users.",
+//     });
+//   }
+// };
+
+// const getAllCouncilors = async (req, res) => {
+//   try {
+//     const { page, limit } = req.query;
+//     const features = new APIFeatures(
+//       User.find({ role: "councilor" }),
+//       req.query
+//     )
+//       .search()
+//       .filter()
+//       .sort()
+//       .limitFields()
+//       .paginate();
+
+//     const users = await features.query;
+//     const totalUsers = await User.countDocuments(features.query._conditions);
+
+//     res.status(200).json({
+//       success: true,
+//       results: users.length,
+//       totalUsers,
+//       data: users,
+//       pagination: {
+//         currentPage: Number(page),
+//         limit: Number(limit),
+//         totalPages: Math.ceil(totalUsers / limit),
+//       },
+//     });
+//   } catch (error) {
+//     console.error("Error fetching users:", error);
+//     res.status(500).json({
+//       success: false,
+//       message: "An error occurred while fetching users.",
+//     });
+//   }
+// };
+
 const getAllCouncilors = async (req, res) => {
   try {
-    // Create a new instance of APIFeatures
-    const features = new APIFeatures(
-      User.find({ role: "councilor" }),
-      req.query
-    )
-      .search()
-      .filter()
-      .sort()
-      .limitFields()
-      .paginate();
+    const { page = 1, limit = 10 } = req.query;
 
-    // Execute the query
-    const users = await features.query;
+    // Ensure page and limit are numbers
+    const pageNumber = Number(page);
+    const limitNumber = Number(limit);
 
-    // Get total count for pagination info
-    const totalUsers = await User.countDocuments(features.query._conditions);
+    // Calculate pagination
+    const skip = (pageNumber - 1) * limitNumber;
+
+    // Fetch users with pagination
+    const users = await User.find({ role: "councilor" })
+      .skip(skip)
+      .limit(limitNumber);
+
+    // Count total documents
+    const totalUsers = await User.countDocuments({ role: "councilor" });
+
+    // Calculate total pages
+    const totalPages = Math.ceil(totalUsers / limitNumber);
 
     res.status(200).json({
       success: true,
@@ -558,11 +680,9 @@ const getAllCouncilors = async (req, res) => {
       totalUsers,
       data: users,
       pagination: {
-        currentPage: features.queryString.page * 1 || 1,
-        limit: features.queryString.limit * 1 || 20,
-        totalPages: Math.ceil(
-          totalUsers / (features.queryString.limit * 1 || 20)
-        ),
+        currentPage: pageNumber,
+        limit: limitNumber,
+        totalPages: totalPages,
       },
     });
   } catch (error) {
@@ -617,19 +737,56 @@ const assignCounselor = async (req, res) => {
   }
 };
 
+// const getAllAssignedUsersByCounselorId = async (req, res) => {
+//   try {
+//     const { counselorId } = req.params;
+
+//     // Find all users assigned to the given counselor ID
+//     const assignedUsers = await User.find({
+//       assignedCounselor: counselorId,
+//     });
+
+//     res.status(200).json({
+//       success: true,
+//       results: assignedUsers.length,
+//       data: assignedUsers,
+//     });
+//   } catch (error) {
+//     console.error("Error fetching assigned users:", error);
+//     res.status(500).json({
+//       success: false,
+//       message: "An error occurred while fetching assigned users.",
+//     });
+//   }
+// };
+
 const getAllAssignedUsersByCounselorId = async (req, res) => {
   try {
     const { counselorId } = req.params;
+    const page = parseInt(req.query.page, 10) || 1;
+    const limit = parseInt(req.query.limit, 10) || 10;
+    const skip = (page - 1) * limit;
 
-    // Find all users assigned to the given counselor ID
-    const assignedUsers = await User.find({
+    // Find all users assigned to the given counselor ID with pagination
+    const assignedUsers = await User.find({ assignedCounselor: counselorId })
+      .skip(skip)
+      .limit(limit);
+
+    // Get total count for pagination info
+    const totalUsers = await User.countDocuments({
       assignedCounselor: counselorId,
     });
 
     res.status(200).json({
       success: true,
       results: assignedUsers.length,
+      totalUsers,
       data: assignedUsers,
+      pagination: {
+        currentPage: page,
+        limit: limit,
+        totalPages: Math.ceil(totalUsers / limit),
+      },
     });
   } catch (error) {
     console.error("Error fetching assigned users:", error);
@@ -640,24 +797,62 @@ const getAllAssignedUsersByCounselorId = async (req, res) => {
   }
 };
 
+// const getAllAgents = async (req, res) => {
+//   try {
+//     const page = parseInt(req.query.page) || 1;
+//     const limit = parseInt(req.query.limit) || 10;
+//     const skip = (page - 1) * limit;
+//     // Create a new instance of APIFeatures
+//     const features = new APIFeatures(
+//       Agents.find({}).populate("location"),
+//       req.query
+//     )
+//       .search()
+//       .filter()
+//       .sort()
+//       .limitFields()
+//       .paginate();
+
+//     // Execute the query with pagination
+//     const users = await features.query.skip(skip).limit(limit);
+
+//     // Get total count for pagination info
+//     const totalUsers = await Agents.countDocuments(features.query._conditions);
+
+//     res.status(200).json({
+//       success: true,
+//       results: users.length,
+//       totalUsers,
+//       data: users,
+//       pagination: {
+//         currentPage: page,
+//         limit: limit,
+//         totalPages: Math.ceil(totalUsers / limit),
+//       },
+//     });
+//   } catch (error) {
+//     console.error("Error fetching Agents:", error);
+//     res.status(500).json({
+//       success: false,
+//       message: "An error occurred while fetching Agents.",
+//     });
+//   }
+// };
+
 const getAllAgents = async (req, res) => {
   try {
-    // Create a new instance of APIFeatures
-    const features = new APIFeatures(
-      Agents.find({}).populate("location"),
-      req.query
-    )
-      .search()
-      .filter()
-      .sort()
-      .limitFields()
-      .paginate();
+    const page = parseInt(req.query.page, 10) || 1;
+    const limit = parseInt(req.query.limit, 10) || 10;
+    const skip = (page - 1) * limit;
 
-    // Execute the query
-    const users = await features.query;
+    // Fetch paginated results
+    const users = await Agents.find({})
+      .populate("location")
+      .skip(skip)
+      .limit(limit);
 
     // Get total count for pagination info
-    const totalUsers = await Agents.countDocuments(features.query._conditions);
+    const totalUsers = await Agents.countDocuments();
 
     res.status(200).json({
       success: true,
@@ -665,11 +860,9 @@ const getAllAgents = async (req, res) => {
       totalUsers,
       data: users,
       pagination: {
-        currentPage: features.queryString.page * 1 || 1,
-        limit: features.queryString.limit * 1 || 20,
-        totalPages: Math.ceil(
-          totalUsers / (features.queryString.limit * 1 || 20)
-        ),
+        currentPage: page,
+        limit: limit,
+        totalPages: Math.ceil(totalUsers / limit),
       },
     });
   } catch (error) {

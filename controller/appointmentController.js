@@ -5,6 +5,12 @@ const Appointment = require("../model/appointment");
 const DiagnosticLab = require("../model/diagnosticLabs");
 const Location = require("../model/location");
 const DiagnosticTest = require("../model/diagnosticTest");
+const {
+  analyzeSalesAndCommissions,
+  categorizeFranchiseSales,
+} = require("../helper/salesAnalysisServices");
+const Franchise = require("../model/franchise");
+const SalesRange = require("../model/saleRange");
 
 // const createAppointment = async (req, res) => {
 //   try {
@@ -136,6 +142,37 @@ const createAppointment = async (req, res) => {
 
     await newAppointment.save();
     res.status(201).json(newAppointment);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+const getUserAppointments = async (req, res) => {
+  try {
+    const userId = req.account;
+    const appointments = await Appointment.find({ createdBy: userId })
+      .populate({
+        path: "createdBy",
+        select: "-password -otp -role -lastLogin -lastLogout",
+      })
+      .populate({
+        path: "labs.lab",
+        model: "DiagnosticLab",
+        select: "-testsOffered -password -role",
+      })
+      .populate({
+        path: "labs.tests.test",
+        model: "DiagnosticTest",
+        populate: {
+          path: "labCategory",
+          model: "LabCategories",
+        },
+      })
+      .populate({
+        path: "labs.tests.updatedBy",
+        model: "User",
+      });
+    res.json(appointments);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -281,6 +318,15 @@ const updateLabTestStatus = async (req, res) => {
     const appointment = await Appointment.findById(id);
     if (!appointment) {
       return res.status(404).json({ message: "Appointment not found" });
+    }
+
+    // Check if the appointment status is "Approve"
+    if (appointment.status !== "Approve") {
+      return res.status(400).json({
+        success: false,
+        message:
+          "Test status can only be updated when appointment status is 'Approve'",
+      });
     }
 
     const lab = appointment.labs;
@@ -431,6 +477,91 @@ const getAllAppointmentsBySuperAdmin = async (req, res) => {
 //   }
 // };
 
+// const getAllAppointments = async (req, res) => {
+//   try {
+//     // Create a new instance of APIFeatures
+//     const features = new APIFeatures(Appointment.find(), req.query)
+//       .search()
+//       .filter()
+//       .sort()
+//       .limitFields();
+
+//     // Apply pagination after other operations
+//     const paginatedFeatures = features.paginate();
+
+//     // Execute the query with initial population
+//     const appointments = await paginatedFeatures.query
+//       .populate({
+//         path: "referral",
+//         model: "Agent",
+//       })
+//       .populate({
+//         path: "labs.lab",
+//         model: "DiagnosticLab",
+//       })
+//       .populate({
+//         path: "labs.tests.test",
+//         model: "DiagnosticTest",
+//         populate: {
+//           path: "labCategory",
+//           model: "LabCategories",
+//         },
+//       })
+//       .populate({
+//         path: "createdBy",
+//       })
+//       .exec();
+//     // Manually populate the updatedBy field
+//     const populatedAppointments = await Promise.all(
+//       appointments.map(async (appointment) => {
+//         const testsWithUpdatedBy = await Promise.all(
+//           appointment.labs.tests.map(async (test) => {
+//             let updatedByModel = null;
+//             if (test.updatedByModel === "User") {
+//               updatedByModel = await User.findById(test.updatedBy);
+//             } else if (test.updatedByModel === "DiagnosticLab") {
+//               updatedByModel = await DiagnosticLab.findById(test.updatedBy);
+//             } else if (test.updatedByModel === "SuperAdmin") {
+//               updatedByModel = await User.findById(test.updatedBy);
+//             }
+//             return { ...test.toObject(), updatedBy: updatedByModel };
+//           })
+//         );
+
+//         return {
+//           ...appointment.toObject(),
+//           labs: {
+//             ...appointment.labs.toObject(),
+//             tests: testsWithUpdatedBy,
+//           },
+//         };
+//       })
+//     );
+
+//     // Get total count for pagination info
+//     const totalAppointments = await Appointment.countDocuments(
+//       features.query._conditions
+//     );
+
+//     res.status(200).json({
+//       success: true,
+//       results: populatedAppointments.length,
+//       totalAppointments,
+//       data: populatedAppointments,
+//       pagination: {
+//         currentPage: paginatedFeatures.queryString.page * 1 || 1,
+//         limit: paginatedFeatures.queryString.limit * 1 || 10,
+//         totalPages: Math.ceil(
+//           totalAppointments / (paginatedFeatures.queryString.limit * 1 || 10)
+//         ),
+//       },
+//     });
+//   } catch (error) {
+//     console.error("Error fetching appointments:", error);
+//     res.status(500).json({ success: false, message: error.message });
+//   }
+// };
+
 const getAllAppointments = async (req, res) => {
   try {
     // Create a new instance of APIFeatures
@@ -438,13 +569,11 @@ const getAllAppointments = async (req, res) => {
       .search()
       .filter()
       .sort()
-      .limitFields();
-
-    // Apply pagination after other operations
-    const paginatedFeatures = features.paginate();
+      .limitFields()
+      .paginate();
 
     // Execute the query with initial population
-    const appointments = await paginatedFeatures.query
+    const appointments = await features.query
       .populate({
         path: "referral",
         model: "Agent",
@@ -465,6 +594,7 @@ const getAllAppointments = async (req, res) => {
         path: "createdBy",
       })
       .exec();
+
     // Manually populate the updatedBy field
     const populatedAppointments = await Promise.all(
       appointments.map(async (appointment) => {
@@ -503,10 +633,10 @@ const getAllAppointments = async (req, res) => {
       totalAppointments,
       data: populatedAppointments,
       pagination: {
-        currentPage: paginatedFeatures.queryString.page * 1 || 1,
-        limit: paginatedFeatures.queryString.limit * 1 || 20,
+        currentPage: features.queryString.page * 1 || 1,
+        limit: features.queryString.limit * 1 || 10,
         totalPages: Math.ceil(
-          totalAppointments / (paginatedFeatures.queryString.limit * 1 || 20)
+          totalAppointments / (features.queryString.limit * 1 || 10)
         ),
       },
     });
@@ -515,7 +645,6 @@ const getAllAppointments = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
-
 const getAppointmentsByUserId = async (req, res) => {
   try {
     const { userId } = req.params;
@@ -757,15 +886,90 @@ const getLabsWithTestsInProgress = async (req, res) => {
 //   }
 // };
 
+// const findAppointmentsByLabAndTestStatus = async (req, res) => {
+//   try {
+//     const { labId } = req.params;
+//     const { page = 1, limit = 10 } = req.query;
+//     const skip = (page - 1) * limit;
+//     // Ensure labId is converted to ObjectId if needed
+//     const appointments = await Appointment.find({
+//       "labs.lab": labId,
+//       "labs.tests.status": { $in: ["In Progress", "Completed", "Closed"] },
+//     })
+//       .populate({
+//         path: "referral",
+//         model: "Agent",
+//       })
+//       .populate({
+//         path: "labs.lab",
+//         model: "DiagnosticLab",
+//       })
+//       .populate({
+//         path: "labs.tests.test",
+//         model: "DiagnosticTest",
+//         populate: {
+//           path: "labCategory",
+//           model: "LabCategories",
+//         },
+//       })
+//       .populate({
+//         path: "createdBy",
+//       })
+//       .exec();
+
+//     // Manually populate the updatedBy field
+//     const populatedAppointments = await Promise.all(
+//       appointments.map(async (appointment) => {
+//         const testsWithUpdatedBy = await Promise.all(
+//           appointment.labs.tests.map(async (test) => {
+//             let updatedByModel = null;
+//             if (test.updatedByModel === "User") {
+//               updatedByModel = await User.findById(test.updatedBy);
+//             } else if (test.updatedByModel === "DiagnosticLab") {
+//               updatedByModel = await DiagnosticLab.findById(test.updatedBy);
+//             } else if (test.updatedByModel === "SuperAdmin") {
+//               updatedByModel = await User.findById(test.updatedBy);
+//             }
+//             return { ...test.toObject(), updatedBy: updatedByModel };
+//           })
+//         );
+
+//         return {
+//           ...appointment.toObject(),
+//           labs: {
+//             ...appointment.labs.toObject(),
+//             tests: testsWithUpdatedBy,
+//           },
+//         };
+//       })
+//     );
+
+//     res.status(200).json({
+//       data: populatedAppointments,
+//       totalAppointments: populatedAppointments.length,
+//     });
+//   } catch (err) {
+//     console.error(err);
+//     res.status(500).json({
+//       error: "Error fetching appointments",
+//       details: err.message,
+//     });
+//   }
+// };
+
 const findAppointmentsByLabAndTestStatus = async (req, res) => {
   try {
     const { labId } = req.params;
+    const { page = 1, limit = 10 } = req.query;
+    const skip = (page - 1) * limit;
 
     // Ensure labId is converted to ObjectId if needed
     const appointments = await Appointment.find({
       "labs.lab": labId,
       "labs.tests.status": { $in: ["In Progress", "Completed", "Closed"] },
     })
+      .skip(parseInt(skip))
+      .limit(parseInt(limit))
       .populate({
         path: "referral",
         model: "Agent",
@@ -786,6 +990,12 @@ const findAppointmentsByLabAndTestStatus = async (req, res) => {
         path: "createdBy",
       })
       .exec();
+
+    // Get total number of appointments to calculate total pages
+    const totalAppointments = await Appointment.countDocuments({
+      "labs.lab": labId,
+      "labs.tests.status": { $in: ["In Progress", "Completed", "Closed"] },
+    });
 
     // Manually populate the updatedBy field
     const populatedAppointments = await Promise.all(
@@ -816,7 +1026,10 @@ const findAppointmentsByLabAndTestStatus = async (req, res) => {
 
     res.status(200).json({
       data: populatedAppointments,
-      totalAppointments: populatedAppointments.length,
+      totalAppointments: totalAppointments,
+      currentPage: parseInt(page),
+      limit: parseInt(limit),
+      totalPages: Math.ceil(totalAppointments / limit),
     });
   } catch (err) {
     console.error(err);
@@ -827,47 +1040,236 @@ const findAppointmentsByLabAndTestStatus = async (req, res) => {
   }
 };
 
-const getAllAppointmentsByAgentId = async (req, res) => {
-  try {
-    const { agentId } = req.params;
+// const getAllAppointmentsByAgentId = async (req, res) => {
+//   try {
+//     const { agentId } = req.params;
 
-    // Fetch appointments where the referral matches the agentId
-    const appointments = await Appointment.find({ referral: agentId })
-      // Populate the referral field with Agent documents
-      .populate({
-        path: "referral",
-        model: "Agent",
-      })
-      // Populate the labs.lab field with DiagnosticLab documents
-      .populate({
-        path: "labs.lab",
-        model: "DiagnosticLab",
-      })
-      // Populate the labs.tests.test field with DiagnosticTest documents
-      .populate({
-        path: "labs.tests.test",
-        model: "DiagnosticTest",
-      })
-      // Populate the labs.tests.updatedBy field with User documents
-      .populate({
-        path: "labs.tests.updatedBy",
-        model: "User",
-      })
-      // Populate the createdBy field with User documents (assuming it's a user reference)
-      .populate({
-        path: "createdBy",
-        model: "User",
-      })
-      .populate({
-        path: "labs.tests.updatedBy",
-        model: "User",
+//     // Fetch appointments where the referral matches the agentId
+//     const appointments = await Appointment.find({ referral: agentId })
+//       // Populate the referral field with Agent documents
+//       .populate({
+//         path: "referral",
+//         model: "Agent",
+//       })
+//       // Populate the labs.lab field with DiagnosticLab documents
+//       .populate({
+//         path: "labs.lab",
+//         model: "DiagnosticLab",
+//       })
+//       // Populate the labs.tests.test field with DiagnosticTest documents
+//       .populate({
+//         path: "labs.tests.test",
+//         model: "DiagnosticTest",
+//         populate: {
+//           path: "labCategory",
+//           model: "LabCategories",
+//         },
+//       })
+//       // // Populate the labs.tests.updatedBy field with User documents
+//       // .populate({
+//       //   path: "labs.tests.updatedBy",
+//       //   model: "User",
+//       // })
+//       // // Populate the createdBy field with User documents (assuming it's a user reference)
+//       // .populate({
+//       //   path: "createdBy",
+//       //   model: "User",
+//       // })
+//       // .populate({
+//       //   path: "labs.tests.updatedBy",
+//       //   model: "User",
+//       // })
+//       .exec();
+
+//     // Respond with the found appointments
+//     res.status(200).json(appointments);
+//   } catch (error) {
+//     // Handle any errors that occurred during the query
+//     res.status(500).json({ message: error.message });
+//   }
+// };
+
+// const analyzeAppointments = async (req, res) => {
+//   try {
+//     const { franchiseId } = req.params;
+//     const { startDate, endDate } = req.query;
+
+//     // Convert string dates to Date objects if provided
+//     const start = startDate ? new Date(startDate) : undefined;
+//     const end = endDate ? new Date(endDate) : undefined;
+
+//     const analysisResult = await analyzeSalesAndCommissions(
+//       franchiseId,
+//       start,
+//       end
+//     );
+
+//     res.json({
+//       success: true,
+//       data: {
+//         franchiseTotalCommission: analysisResult.franchiseTotalCommission,
+//         agentResults: analysisResult.agentResults.map((agent) => ({
+//           agentName: agent.agentName,
+//           totalSales: agent.totalSales,
+//           totalCommission: agent.totalCommission,
+//           salesByRange: agent.salesByRange,
+//         })),
+//       },
+//     });
+//   } catch (error) {
+//     console.error("Error in analyzeAppointments:", error);
+//     res.status(500).json({
+//       success: false,
+//       message: "An error occurred while analyzing appointments",
+//       error: error.message,
+//     });
+//   }
+// };
+
+const getFranchiseSalesCategories = async (req, res) => {
+  try {
+    let { startDate, endDate } = req.query;
+
+    if (!startDate || !endDate) {
+      endDate = new Date();
+      startDate = new Date(endDate.getTime() - 30 * 24 * 60 * 60 * 1000); // 30 days ago
+    } else {
+      startDate = new Date(startDate);
+      endDate = new Date(endDate);
+    }
+
+    console.log("Start Date:", startDate, "End Date:", endDate);
+
+    const categorizedResults = await categorizeFranchiseSales(
+      startDate,
+      endDate
+    );
+
+    res.status(200).json({
+      success: true,
+      data: categorizedResults,
+    });
+  } catch (error) {
+    console.error("Error fetching franchise sales categories:", error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+const calculateAndDistributeCommissions = async (req, res) => {
+  const getLast30DaysRange = () => {
+    const endDate = new Date();
+    const startDate = new Date();
+    startDate.setDate(endDate.getDate() - 30);
+    return { startDate, endDate };
+  };
+  try {
+    const { startDate, endDate } =
+      req.query.startDate && req.query.endDate
+        ? {
+            startDate: new Date(req.query.startDate),
+            endDate: new Date(req.query.endDate),
+          }
+        : getLast30DaysRange();
+
+    const franchises = await Franchise.find();
+    const salesRanges = await SalesRange.find().sort("minAmount");
+
+    const commissionResults = [];
+
+    for (const franchise of franchises) {
+      const agents = await Agents.find({ franchise: franchise._id });
+      const agentIds = agents.map((agent) => agent._id);
+
+      const appointments = await Appointment.find({
+        referral: { $in: agentIds },
+        appointmentDate: { $gte: new Date(startDate), $lte: new Date(endDate) },
+        "labs.tests.status": { $in: ["Closed", "Completed", "Approve"] },
       });
 
-    // Respond with the found appointments
-    res.status(200).json(appointments);
+      const totalFranchiseSales = appointments.reduce(
+        (sum, appointment) => sum + (appointment.totalAmount || 0),
+        0
+      );
+
+      let franchiseCommission = 0;
+      let agentCommission = 0;
+
+      // Determine commission based on sales range
+      for (const range of salesRanges) {
+        if (
+          totalFranchiseSales >= range.minAmount &&
+          totalFranchiseSales <= range.maxAmount
+        ) {
+          franchiseCommission =
+            (totalFranchiseSales * range.franchiseCommissionPercentage) / 100;
+
+          agentCommission =
+            (totalFranchiseSales * range.agentCommissionPercentage) / 100;
+
+          // Update appointments with commission
+          for (const appointment of appointments) {
+            appointment.commission.superAdminToFranchise =
+              range.franchiseCommissionPercentage;
+            appointment.commission.superAdminToAgent =
+              range.agentCommissionPercentage;
+            await appointment.save();
+          }
+
+          break;
+        }
+      }
+
+      // Store commission details
+      commissionResults.push({
+        franchiseName: franchise.name,
+        totalSales: totalFranchiseSales,
+        franchiseCommission,
+        agentCommission,
+      });
+    }
+
+    return res.json(commissionResults);
+  } catch (err) {
+    console.error("Error calculating commissions:", err);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
+const distributeCommissions = async (req, res) => {
+  try {
+    const { startDate, endDate, commissionRates } = req.body;
+
+    // Validate input dates
+    const start = startDate
+      ? new Date(startDate)
+      : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    const end = endDate ? new Date(endDate) : new Date();
+
+    const categorizedResults = await categorizeFranchiseSales(start, end);
+
+    const commissions = categorizedResults.map((range) => {
+      const commissionRate = commissionRates[range.rangeName] || 0; // Default to 0% if not provided
+      const totalSales = range.franchises.reduce(
+        (sum, franchise) => sum + franchise.totalSales,
+        0
+      );
+      const commissionAmount = totalSales * (commissionRate / 100);
+
+      return {
+        rangeName: range.rangeName,
+        commissionRate,
+        totalSales,
+        commissionAmount,
+      };
+    });
+
+    res.status(200).json({
+      success: true,
+      data: commissions,
+    });
   } catch (error) {
-    // Handle any errors that occurred during the query
-    res.status(500).json({ message: error.message });
+    console.error("Error distributing commissions:", error);
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 
@@ -876,7 +1278,7 @@ module.exports = {
   updateAppointment,
   updateLabTestStatus,
   deleteAppointment,
-  getAllAppointmentsByAgentId,
+  // getAllAppointmentsByAgentId,
   getAllAppointmentsByFranchise,
   getAllAppointmentsBySuperAdmin,
   getAllAppointments,
@@ -887,4 +1289,9 @@ module.exports = {
   getLabsByLocation,
   getLabsWithTestsInProgress,
   findAppointmentsByLabAndTestStatus,
+  // analyzeAppointments,
+  getFranchiseSalesCategories,
+  calculateAndDistributeCommissions,
+  distributeCommissions,
+  getUserAppointments,
 };

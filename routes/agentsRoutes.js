@@ -11,6 +11,7 @@ const {
   deleteAgent,
   getAppointmentsByAgentsId,
   getAgentsByFranchiseId,
+  setCommissionForSelectedAgents,
 } = require("../controller/agentController");
 const { accountMiddleware } = require("../middleware/accoundvalidate");
 
@@ -51,5 +52,7 @@ router.put(
 
 // DELETE /api/agent/:agentId
 router.delete("/delete-agent/:agentId", accountMiddleware, deleteAgent);
+
+router.post("/agents-commission", setCommissionForSelectedAgents);
 
 module.exports = router;

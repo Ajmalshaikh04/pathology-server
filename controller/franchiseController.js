@@ -67,9 +67,9 @@ exports.getAllFranchises = async (req, res) => {
       data: franchises,
       pagination: {
         currentPage: features.queryString.page * 1 || 1,
-        limit: features.queryString.limit * 1 || 20,
+        limit: features.queryString.limit * 1 || 10,
         totalPages: Math.ceil(
-          totalFranchises / (features.queryString.limit * 1 || 20)
+          totalFranchises / (features.queryString.limit * 1 || 10)
         ),
       },
     });
@@ -150,5 +150,46 @@ exports.deleteFranchiseById = async (req, res) => {
   } catch (error) {
     console.error("Error deleting franchise:", error);
     res.status(500).json({ message: "Server error" });
+  }
+};
+
+exports.setCommissionForSelectedFranchises = async (req, res) => {
+  try {
+    const { franchiseIds, commissionPercentage } = req.body;
+
+    // Validate input
+    if (!Array.isArray(franchiseIds) || franchiseIds.length === 0) {
+      return res.status(400).json({ message: "No franchises selected." });
+    }
+    if (
+      typeof commissionPercentage !== "number" ||
+      commissionPercentage < 0 ||
+      commissionPercentage > 100
+    ) {
+      return res
+        .status(400)
+        .json({ message: "Invalid commission percentage." });
+    }
+
+    // Update commission for selected franchises
+    const result = await Franchise.updateMany(
+      { _id: { $in: franchiseIds } },
+      { $set: { commissionPercentage } }
+    );
+
+    if (result.nModified === 0) {
+      return res
+        .status(404)
+        .json({ message: "No franchises found to update." });
+    }
+
+    return res
+      .status(200)
+      .json({ message: "Commission updated successfully." });
+  } catch (error) {
+    console.error("Error setting commission:", error);
+    return res
+      .status(500)
+      .json({ message: "An error occurred while updating commissions." });
   }
 };

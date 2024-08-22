@@ -5,6 +5,7 @@ const DiagnosticLab = require("../model/diagnosticLabs");
 const Franchise = require("../model/franchise");
 const Location = require("../model/location");
 const bcrypt = require("bcrypt");
+const User = require("../model/userModel");
 
 // Create an agent
 // exports.createAgent = async (req, res) => {
@@ -274,7 +275,7 @@ exports.getAgentsByFranchiseId = async (req, res) => {
 
     // Apply pagination
     const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 20;
+    const limit = parseInt(req.query.limit) || 10;
     const startIndex = (page - 1) * limit;
     const endIndex = page * limit;
     const paginatedAgents = agents.slice(startIndex, endIndex);
@@ -296,11 +297,89 @@ exports.getAgentsByFranchiseId = async (req, res) => {
   }
 };
 
+// exports.getAppointmentsByAgentsId = async (req, res) => {
+//   try {
+//     const { agentId } = req.params;
+//     // Create a base query
+//     const baseQuery = Appointment.find({ referral: agentId })
+//       .populate({
+//         path: "labs.lab",
+//         model: "DiagnosticLab",
+//       })
+//       .populate({
+//         path: "labs.tests.test",
+//         model: "DiagnosticTest",
+//         populate: {
+//           path: "labCategory",
+//           model: "LabCategories",
+//         },
+//       })
+//       .populate({
+//         path: "labs.tests.updatedBy",
+//         model: "User",
+//       })
+//       .populate({
+//         path: "createdBy",
+//       });
+
+//     // Create a new instance of APIFeatures
+//     const features = new APIFeatures(baseQuery, req.query)
+//       .search()
+//       .filter()
+//       .sort()
+//       .limitFields();
+
+//     // Extract pagination info from query
+//     const page = parseInt(req.query.page) || 1;
+//     const limit = parseInt(req.query.limit) || 10;
+//     const skip = (page - 1) * limit;
+
+//     // Execute the query with pagination
+//     const appointments = await features.query.skip(skip).limit(limit);
+
+//     // Get total count for pagination info
+//     const totalAppointments = await Appointment.countDocuments({
+//       referral: agentId,
+//     });
+
+//     res.status(200).json({
+//       success: true,
+//       results: appointments.length,
+//       totalAppointments,
+//       data: appointments,
+//       pagination: {
+//         currentPage: page,
+//         limit: limit,
+//         totalPages: Math.ceil(totalAppointments / limit),
+//       },
+//     });
+//   } catch (error) {
+//     console.error("Error fetching appointments by agent ID:", error);
+//     res.status(500).json({ success: false, message: "Server error" });
+//   }
+// };
+
 exports.getAppointmentsByAgentsId = async (req, res) => {
   try {
     const { agentId } = req.params;
+
     // Create a base query
-    const baseQuery = Appointment.find({ referral: agentId })
+    const baseQuery = Appointment.find({ referral: agentId });
+
+    // Create a new instance of APIFeatures
+    const features = new APIFeatures(baseQuery, req.query)
+      .search()
+      .filter()
+      .sort()
+      .limitFields()
+      .paginate();
+
+    // Execute the query with initial population
+    const appointments = await features.query
+      .populate({
+        path: "referral",
+        model: "Agent",
+      })
       .populate({
         path: "labs.lab",
         model: "DiagnosticLab",
@@ -314,46 +393,131 @@ exports.getAppointmentsByAgentsId = async (req, res) => {
         },
       })
       .populate({
-        path: "labs.tests.updatedBy",
-        model: "User",
-      })
-      .populate({
         path: "createdBy",
-      });
+      })
+      .exec();
 
-    // Create a new instance of APIFeatures
-    const features = new APIFeatures(baseQuery, req.query)
-      .search()
-      .filter()
-      .sort()
-      .limitFields();
+    // Manually populate the updatedBy field
+    const populatedAppointments = await Promise.all(
+      appointments.map(async (appointment) => {
+        const testsWithUpdatedBy = await Promise.all(
+          appointment.labs.tests.map(async (test) => {
+            let updatedByModel = null;
+            if (test.updatedByModel === "User") {
+              updatedByModel = await User.findById(test.updatedBy);
+            } else if (test.updatedByModel === "DiagnosticLab") {
+              updatedByModel = await DiagnosticLab.findById(test.updatedBy);
+            } else if (test.updatedByModel === "SuperAdmin") {
+              updatedByModel = await User.findById(test.updatedBy);
+            }
+            return { ...test.toObject(), updatedBy: updatedByModel };
+          })
+        );
 
-    // Extract pagination info from query
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 20;
-    const skip = (page - 1) * limit;
-
-    // Execute the query with pagination
-    const appointments = await features.query.skip(skip).limit(limit);
+        return {
+          ...appointment.toObject(),
+          labs: {
+            ...appointment.labs.toObject(),
+            tests: testsWithUpdatedBy,
+          },
+        };
+      })
+    );
 
     // Get total count for pagination info
     const totalAppointments = await Appointment.countDocuments({
       referral: agentId,
+      ...features.query._conditions,
     });
 
     res.status(200).json({
       success: true,
-      results: appointments.length,
+      results: populatedAppointments.length,
       totalAppointments,
-      data: appointments,
+      data: populatedAppointments,
       pagination: {
-        currentPage: page,
-        limit: limit,
-        totalPages: Math.ceil(totalAppointments / limit),
+        currentPage: features.queryString.page * 1 || 1,
+        limit: features.queryString.limit * 1 || 10,
+        totalPages: Math.ceil(
+          totalAppointments / (features.queryString.limit * 1 || 10)
+        ),
       },
     });
   } catch (error) {
     console.error("Error fetching appointments by agent ID:", error);
-    res.status(500).json({ success: false, message: "Server error" });
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+exports.getAppointmentsByFranchiseAndDateRange = async (req, res) => {
+  const { franchiseId, startDate, endDate } = req.query;
+  // If no dates are provided, default to the last 28 days
+  if (!startDate || !endDate) {
+    endDate = new Date();
+    startDate = new Date(endDate.getTime() - 28 * 24 * 60 * 60 * 1000);
+  }
+
+  // Get all agents belonging to the franchise
+  const agents = await Agent.find({ franchise: franchiseId });
+  const agentIds = agents.map((agent) => agent._id);
+
+  // Get all appointments for these agents within the date range
+  const appointments = await Appointment.find({
+    referral: { $in: agentIds },
+    createdAt: { $gte: startDate, $lte: endDate },
+  })
+    .populate("referral")
+    .populate("labs.lab")
+    .populate("labs.tests.test");
+
+  // Group appointments by agent
+  const appointmentsByAgent = {};
+  appointments.forEach((appointment) => {
+    const agentId = appointment.referral._id.toString();
+    if (!appointmentsByAgent[agentId]) {
+      appointmentsByAgent[agentId] = [];
+    }
+    appointmentsByAgent[agentId].push(appointment);
+  });
+
+  return appointmentsByAgent;
+};
+
+exports.setCommissionForSelectedAgents = async (req, res) => {
+  try {
+    const { agentIds, commissionPercentage } = req.body;
+
+    // Validate input
+    if (!Array.isArray(agentIds) || agentIds.length === 0) {
+      return res.status(400).json({ message: "No agents selected." });
+    }
+    if (
+      typeof commissionPercentage !== "number" ||
+      commissionPercentage < 0 ||
+      commissionPercentage > 100
+    ) {
+      return res
+        .status(400)
+        .json({ message: "Invalid commission percentage." });
+    }
+
+    // Update commission for selected agents
+    const result = await Agents.updateMany(
+      { _id: { $in: agentIds } },
+      { $set: { commissionPercentage } }
+    );
+
+    if (result.nModified === 0) {
+      return res.status(404).json({ message: "No agents found to update." });
+    }
+
+    return res
+      .status(200)
+      .json({ message: "Commission updated successfully." });
+  } catch (error) {
+    console.error("Error setting commission:", error);
+    return res
+      .status(500)
+      .json({ message: "An error occurred while updating commissions." });
   }
 };

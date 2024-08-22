@@ -8,8 +8,8 @@ const formatResponse = (status, data = null, error = null) => {
 // Create a new lab category
 exports.createLabCategory = async (req, res) => {
   try {
-    const { name, image } = req.body;
-    const newLabCategory = new LabCategories({ name, image });
+    const { name, image, profileImg } = req.body;
+    const newLabCategory = new LabCategories({ name, image, profileImg });
     await newLabCategory.save();
     res.status(201).json(formatResponse(201, newLabCategory));
   } catch (error) {
@@ -17,11 +17,41 @@ exports.createLabCategory = async (req, res) => {
   }
 };
 
-// Get all lab categories
 exports.getLabCategories = async (req, res) => {
   try {
+    const { page = 1, limit = 10 } = req.query;
+    const skip = (page - 1) * limit;
+
+    const labCategories = await LabCategories.find()
+      .skip(skip)
+      .limit(Number(limit));
+    const totalCategories = await LabCategories.countDocuments();
+
+    const pagination = {
+      currentPage: Number(page),
+      limit: Number(limit),
+      totalCategories,
+      totalPages: Math.ceil(totalCategories / limit),
+    };
+
+    res
+      .status(200)
+      .json(formatResponse(200, { data: labCategories, pagination }));
+  } catch (error) {
+    res.status(400).json(formatResponse(400, null, error.message));
+  }
+};
+
+exports.getAllLabCategories = async (req, res) => {
+  try {
     const labCategories = await LabCategories.find();
-    res.status(200).json(formatResponse(200, labCategories));
+
+    res.status(200).json(
+      formatResponse(200, {
+        data: labCategories,
+        count: labCategories.length,
+      })
+    );
   } catch (error) {
     res.status(400).json(formatResponse(400, null, error.message));
   }
@@ -45,10 +75,10 @@ exports.getLabCategoryById = async (req, res) => {
 // Update a lab category by ID
 exports.updateLabCategory = async (req, res) => {
   try {
-    const { name, image } = req.body;
+    const { name, image, profileImg } = req.body;
     const updatedLabCategory = await LabCategories.findByIdAndUpdate(
       req.params.id,
-      { name, image },
+      { name, image, profileImg },
       { new: true, runValidators: true }
     );
     if (!updatedLabCategory) {

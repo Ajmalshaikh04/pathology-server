@@ -8,6 +8,9 @@ const LabCategoriesSchema = new mongoose.Schema({
   image: {
     type: String,
   },
+  profileImg: {
+    type: String,
+  },
 });
 
 const LabCategories = mongoose.model("LabCategories", LabCategoriesSchema);

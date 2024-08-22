@@ -17,6 +17,12 @@ const agentSchema = new Schema({
     ref: "Franchise",
     required: true,
   },
+  commissionPercentage: {
+    type: Number,
+    min: 0,
+    max: 100,
+    default: 20, // Default commission for the agent
+  },
   lastLogin: { type: Date },
   lastLogout: { type: Date },
 });

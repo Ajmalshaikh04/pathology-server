@@ -4,6 +4,7 @@ const labCategoriesController = require("../controller/labCategoriesController")
 
 router.post("/lab-test/", labCategoriesController.createLabCategory);
 router.get("/lab-test/", labCategoriesController.getLabCategories);
+router.get("/lab-all-test", labCategoriesController.getAllLabCategories);
 router.get("/lab-test/:id", labCategoriesController.getLabCategoryById);
 router.put("/lab-test/:id", labCategoriesController.updateLabCategory);
 router.delete("/lab-test/:id", labCategoriesController.deleteLabCategory);
