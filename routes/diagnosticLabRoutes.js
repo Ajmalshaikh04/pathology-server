@@ -11,6 +11,8 @@ const {
   deleteDiagnosticLabById,
   toggleHandleView,
   getHandleViewTrueLabs,
+  getLabBoyByLabId,
+  assignLabBoy,
 } = require("../controller/diagnosticLabController");
 const { accountMiddleware } = require("../middleware/accoundvalidate");
 
@@ -43,5 +45,13 @@ router.delete(
 router.put("/toggle-handle-view/:labId", accountMiddleware, toggleHandleView);
 
 router.get("/handle-view-labs", accountMiddleware, getHandleViewTrueLabs);
+router.get(
+  "/get-lab-boy-by-lab-id/:labId",
+  accountMiddleware,
+  getLabBoyByLabId
+);
+
+// Route to assign a lab boy to a specific appointment
+router.put("/assign-lab-boy-to-appointment", assignLabBoy);
 
 module.exports = router;

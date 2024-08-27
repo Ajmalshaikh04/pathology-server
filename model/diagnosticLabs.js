@@ -25,6 +25,9 @@ const DiagnosticLabSchema = new mongoose.Schema(
     image: {
       type: String,
     },
+    profileImg: {
+      type: String,
+    },
     isLabLogIn: {
       type: Boolean,
       default: false,

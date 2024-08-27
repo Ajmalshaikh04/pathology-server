@@ -20,6 +20,12 @@ const agentSchema = new Schema({
     ref: "Franchise",
     required: true,
   },
+  commissionPercentage: {
+    type: Number,
+    min: 0,
+    max: 100,
+    default: 20, // Default commission for the agent
+  },
   lastLogin: { type: Date },
   lastLogout: { type: Date },
 });
@@ -32,6 +38,7 @@ C:\ABS\Projects\pathology-server\model\appointment.js
 
 const mongoose = require("mongoose");
 const crypto = require("node:crypto");
+const Agents = require("../model/agents");
 
 const generateTicket = () => crypto.randomBytes(3).toString("hex");
 
@@ -61,10 +68,10 @@ const labSchema = new mongoose.Schema({
   tests: [testSchema],
 });
 
-const commissionSchema = new mongoose.Schema({
-  superAdminToFranchise: { type: Number, min: 0, max: 100, default: 20 },
-  superAdminToAgent: { type: Number, min: 0, max: 100, default: 20 },
-});
+// const commissionSchema = new mongoose.Schema({
+//   superAdminToFranchise: { type: Number, min: 0, max: 100, default: 20 },
+//   superAdminToAgent: { type: Number, min: 0, max: 100, default: 20 },
+// });
 
 const appointmentSchema = new mongoose.Schema(
   {
@@ -93,14 +100,43 @@ const appointmentSchema = new mongoose.Schema(
       type: String,
       enum: ["User", "Agent", "Franchise", "SuperAdmin"],
     },
+    franchise: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Franchise",
+    },
     commission: {
-      type: commissionSchema,
-      default: () => ({}),
+      superAdminToAgent: {
+        type: Number,
+        default: function () {
+          return this.referral ? this.referral.commissionPercentage : 0;
+        },
+      },
+      superAdminToFranchise: {
+        type: Number,
+        default: function () {
+          return this.franchise ? this.franchise.commissionPercentage : 0;
+        },
+      },
     },
     totalAmount: { type: Number, required: true },
   },
   { timestamps: true }
 );
+
+// Middleware to set franchise based on the agent
+appointmentSchema.pre("save", async function (next) {
+  try {
+    if (this.referral && !this.franchise) {
+      const agent = await Agents.findById(this.referral).populate("franchise");
+      if (agent && agent.franchise) {
+        this.franchise = agent.franchise._id;
+      }
+    }
+    next();
+  } catch (err) {
+    next(err);
+  }
+});
 
 const Appointment = mongoose.model("Appointment", appointmentSchema);
 module.exports = Appointment;
@@ -225,6 +261,12 @@ const franchiseSchema = new mongoose.Schema(
     },
     lastLogin: { type: Date },
     lastLogout: { type: Date },
+    commissionPercentage: {
+      type: Number,
+      min: 0,
+      max: 100,
+      default: 20,
+    },
   },
   { timestamps: true }
 );

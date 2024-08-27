@@ -9,6 +9,7 @@ const Franchise = require("../model/franchise.js");
 const APIFeatures = require("../helper/apifeature.js");
 const Agents = require("../model/agents.js");
 const Location = require("../model/location");
+const LabBoy = require("../model/labBoy.js");
 
 const logInUser = async (req, res) => {
   try {
@@ -248,6 +249,161 @@ const updateProfile = async (req, res) => {
   }
 };
 
+// const signInAdmin = async (req, res) => {
+//   try {
+//     const { email, password } = req.body;
+
+//     const account = await User.aggregate([
+//       { $match: { email } },
+//       {
+//         $unionWith: {
+//           coll: "franchises",
+//           pipeline: [
+//             { $match: { email } },
+//             {
+//               $lookup: {
+//                 from: "locations",
+//                 localField: "location",
+//                 foreignField: "_id",
+//                 as: "locationDetails",
+//               },
+//             },
+//             {
+//               $unwind: {
+//                 path: "$locationDetails",
+//                 preserveNullAndEmptyArrays: true,
+//               },
+//             },
+//           ],
+//         },
+//       },
+//       {
+//         $unionWith: {
+//           coll: "diagnosticlabs",
+//           pipeline: [
+//             { $match: { email } },
+//             {
+//               $lookup: {
+//                 from: "locations",
+//                 localField: "address",
+//                 foreignField: "_id",
+//                 as: "locationDetails",
+//               },
+//             },
+//             {
+//               $unwind: {
+//                 path: "$locationDetails",
+//                 preserveNullAndEmptyArrays: true,
+//               },
+//             },
+//           ],
+//         },
+//       },
+//       {
+//         $unionWith: {
+//           coll: "agents",
+//           pipeline: [
+//             { $match: { email } },
+//             {
+//               $lookup: {
+//                 from: "locations",
+//                 localField: "location",
+//                 foreignField: "_id",
+//                 as: "locationDetails",
+//               },
+//             },
+//             {
+//               $unwind: {
+//                 path: "$locationDetails",
+//                 preserveNullAndEmptyArrays: true,
+//               },
+//             },
+//           ],
+//         },
+//       },
+//       {
+//         $lookup: {
+//           from: "locations",
+//           localField: "location",
+//           foreignField: "_id",
+//           as: "locationDetails",
+//         },
+//       },
+//       {
+//         $unwind: { path: "$locationDetails", preserveNullAndEmptyArrays: true },
+//       },
+//       {
+//         $addFields: {
+//           "location.pinCode": "$locationDetails.pinCode",
+//         },
+//       },
+//       { $limit: 1 },
+//     ]).exec();
+
+//     if (!account || account.length === 0) {
+//       return res.status(404).json({
+//         success: false,
+//         message: "User not found",
+//       });
+//     }
+
+//     const foundAccount = account[0];
+
+//     if (foundAccount.role === "user") {
+//       return res.status(403).json({
+//         success: false,
+//         message:
+//           "Unauthorized Access: Only admins, labs, and agents are allowed.",
+//       });
+//     }
+
+//     if (!(await bcrypt.compare(password, foundAccount.password))) {
+//       return res.status(403).json({
+//         success: false,
+//         message: "Invalid Email or Password",
+//       });
+//     }
+
+//     const token = jwt.sign(
+//       { _id: foundAccount._id, role: foundAccount.role },
+//       process.env.JWT_SECRET_KEY,
+//       { expiresIn: process.env.JWT_EXPIRE_TIME }
+//     );
+
+//     // Update last login date
+//     if (foundAccount.role === "franchise") {
+//       await Franchise.findByIdAndUpdate(foundAccount._id, {
+//         lastLogin: new Date(),
+//       });
+//     } else if (foundAccount.role === "lab") {
+//       await DiagnosticLab.findByIdAndUpdate(foundAccount._id, {
+//         lastLogin: new Date(),
+//       });
+//     } else if (foundAccount.role === "agent") {
+//       await Agents.findByIdAndUpdate(foundAccount._id, {
+//         lastLogin: new Date(),
+//       });
+//     } else {
+//       await User.findByIdAndUpdate(foundAccount._id, { lastLogin: new Date() });
+//     }
+
+//     return res.status(200).json({
+//       success: true,
+//       message: "Signin Successful",
+//       role: foundAccount.role,
+//       location: foundAccount.location,
+//       token: token,
+//       userId: foundAccount._id,
+//     });
+//   } catch (err) {
+//     console.error(err);
+//     return res.status(500).json({
+//       success: false,
+//       message: "Internal Server Error",
+//     });
+//   }
+// };
+
 const signInAdmin = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -321,6 +477,28 @@ const signInAdmin = async (req, res) => {
         },
       },
       {
+        $unionWith: {
+          coll: "labboys", // Add LabBoy collection
+          pipeline: [
+            { $match: { email } },
+            {
+              $lookup: {
+                from: "locations",
+                localField: "location",
+                foreignField: "_id",
+                as: "locationDetails",
+              },
+            },
+            {
+              $unwind: {
+                path: "$locationDetails",
+                preserveNullAndEmptyArrays: true,
+              },
+            },
+          ],
+        },
+      },
+      {
         $lookup: {
           from: "locations",
           localField: "location",
@@ -348,14 +526,19 @@ const signInAdmin = async (req, res) => {
 
     const foundAccount = account[0];
 
-    if (foundAccount.role === "user") {
+    // Check for invalid role
+    if (
+      !["superAdmin", "franchise", "lab", "agent", "labBoy"].includes(
+        foundAccount.role
+      )
+    ) {
       return res.status(403).json({
         success: false,
-        message:
-          "Unauthorized Access: Only admins, labs, and agents are allowed.",
+        message: "Unauthorized Access",
       });
     }
 
+    // Check password
     if (!(await bcrypt.compare(password, foundAccount.password))) {
       return res.status(403).json({
         success: false,
@@ -369,7 +552,7 @@ const signInAdmin = async (req, res) => {
       { expiresIn: process.env.JWT_EXPIRE_TIME }
     );
 
-    // Update last login date
+    // Update last login date based on role
     if (foundAccount.role === "franchise") {
       await Franchise.findByIdAndUpdate(foundAccount._id, {
         lastLogin: new Date(),
@@ -380,6 +563,10 @@ const signInAdmin = async (req, res) => {
       });
     } else if (foundAccount.role === "agent") {
       await Agents.findByIdAndUpdate(foundAccount._id, {
+        lastLogin: new Date(),
+      });
+    } else if (foundAccount.role === "labBoy") {
+      await LabBoy.findByIdAndUpdate(foundAccount._id, {
         lastLogin: new Date(),
       });
     } else {

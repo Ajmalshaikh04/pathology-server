@@ -24,6 +24,7 @@ const {
   calculateAndDistributeCommissions,
   distributeCommissions,
   getUserAppointments,
+  getAllAppointmentsByLabBoyId,
 } = require("../controller/appointmentController");
 const {
   accountMiddleware,
@@ -41,6 +42,10 @@ router.put(
 router.delete("/appointments/:id", deleteAppointment);
 
 router.get("/get-all-appointments", getAllAppointments);
+router.get(
+  "/get-all-appointments-by-lab-boy-id/:labBoyId",
+  getAllAppointmentsByLabBoyId
+);
 // router.get("/appointments/agent/:agentId", getAllAppointmentsByAgent);
 router.get(
   "/appointments/franchise/:franchiseId",

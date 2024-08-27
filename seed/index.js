@@ -11,6 +11,7 @@ const Appointment = require("../model/appointment");
 const LabCategory = require("../model/labCategories");
 const Report = require("../model/report");
 const SalesRange = require("../model/saleRange");
+const LabBoy = require("../model/labBoy");
 
 mongoose.connect(
   "mongodb+srv://shahzad201415:L6drIrBh0AYy97yN@cluster0.drcxrzd.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
@@ -727,6 +728,109 @@ const reports = [
   },
 ];
 
+const labBoys = [
+  {
+    name: "Rahul Singh",
+    email: "rahul.singh@example.com",
+    password: "hashedPassword1",
+    contactNumber: "+91 9876543250",
+    role: "labBoy",
+    assignedLab: null, // Will be updated later
+    lastLogin: new Date("2024-08-20T09:30:00Z"),
+    lastLogout: new Date("2024-08-20T17:30:00Z"),
+  },
+  {
+    name: "Priya Patel",
+    email: "priya.patel@example.com",
+    password: "hashedPassword2",
+    contactNumber: "+91 9876543251",
+    role: "labBoy",
+    assignedLab: null, // Will be updated later
+    lastLogin: new Date("2024-08-21T08:45:00Z"),
+    lastLogout: new Date("2024-08-21T16:45:00Z"),
+  },
+  {
+    name: "Amit Kumar",
+    email: "amit.kumar@example.com",
+    password: "hashedPassword3",
+    contactNumber: "+91 9876543252",
+    role: "labBoy",
+    assignedLab: null, // Will be updated later
+    lastLogin: new Date("2024-08-22T10:00:00Z"),
+    lastLogout: new Date("2024-08-22T18:00:00Z"),
+  },
+  {
+    name: "Neha Sharma",
+    email: "neha.sharma@example.com",
+    password: "hashedPassword4",
+    contactNumber: "+91 9876543253",
+    role: "labBoy",
+    assignedLab: null, // Will be updated later
+    lastLogin: new Date("2024-08-23T09:15:00Z"),
+    lastLogout: new Date("2024-08-23T17:15:00Z"),
+  },
+  {
+    name: "Vikram Desai",
+    email: "vikram.desai@example.com",
+    password: "hashedPassword5",
+    contactNumber: "+91 9876543254",
+    role: "labBoy",
+    assignedLab: null, // Will be updated later
+    lastLogin: new Date("2024-08-24T08:30:00Z"),
+    lastLogout: new Date("2024-08-24T16:30:00Z"),
+  },
+  {
+    name: "Anjali Reddy",
+    email: "anjali.reddy@example.com",
+    password: "hashedPassword6",
+    contactNumber: "+91 9876543255",
+    role: "labBoy",
+    assignedLab: null, // Will be updated later
+    lastLogin: new Date("2024-08-25T09:45:00Z"),
+    lastLogout: new Date("2024-08-25T17:45:00Z"),
+  },
+  {
+    name: "Sanjay Gupta",
+    email: "sanjay.gupta@example.com",
+    password: "hashedPassword7",
+    contactNumber: "+91 9876543256",
+    role: "labBoy",
+    assignedLab: null, // Will be updated later
+    lastLogin: new Date("2024-08-26T10:15:00Z"),
+    lastLogout: new Date("2024-08-26T18:15:00Z"),
+  },
+  {
+    name: "Meera Kapoor",
+    email: "meera.kapoor@example.com",
+    password: "hashedPassword8",
+    contactNumber: "+91 9876543257",
+    role: "labBoy",
+    assignedLab: null, // Will be updated later
+    lastLogin: new Date("2024-08-27T09:00:00Z"),
+    lastLogout: new Date("2024-08-27T17:00:00Z"),
+  },
+  {
+    name: "Rajesh Verma",
+    email: "rajesh.verma@example.com",
+    password: "hashedPassword9",
+    contactNumber: "+91 9876543258",
+    role: "labBoy",
+    assignedLab: null, // Will be updated later
+    lastLogin: new Date("2024-08-28T08:15:00Z"),
+    lastLogout: new Date("2024-08-28T16:15:00Z"),
+  },
+  {
+    name: "Pooja Malhotra",
+    email: "pooja.malhotra@example.com",
+    password: "hashedPassword10",
+    contactNumber: "+91 9876543259",
+    role: "labBoy",
+    assignedLab: null, // Will be updated later
+    lastLogin: new Date("2024-08-29T09:30:00Z"),
+    lastLogout: new Date("2024-08-29T17:30:00Z"),
+  },
+];
+
 async function seedDatabase() {
   try {
     // Hash the password
@@ -748,6 +852,8 @@ async function seedDatabase() {
     await Appointment.deleteMany({});
     await LabCategory.deleteMany({});
     await Report.deleteMany({});
+    // Clear existing lab boys
+    await LabBoy.deleteMany({});
 
     // Insert new data
     const createdLocations = await Location.insertMany(locations);
@@ -903,6 +1009,18 @@ async function seedDatabase() {
 
     await Report.insertMany(reportsToInsert);
     console.log("Reports seeded");
+
+    // Assign labs to lab boys and set the common password
+    const labBoysToInsert = labBoys.map((labBoy, index) => ({
+      ...labBoy,
+      password: hashedPassword,
+      assignedLab:
+        createdDiagnosticLabs[index % createdDiagnosticLabs.length]._id,
+    }));
+
+    // Insert lab boys
+    const createdLabBoys = await LabBoy.insertMany(labBoysToInsert);
+    console.log("Lab Boys seeded");
 
     console.log("Database seeded successfully");
   } catch (error) {

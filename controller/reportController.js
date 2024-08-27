@@ -1,5 +1,6 @@
 const Report = require("../model/report");
 const Appointment = require("../model/appointment");
+const { getReportsByUserId } = require("../helper/getReportsByUserId");
 
 async function createReport(req, res) {
   try {
@@ -107,10 +108,22 @@ async function deleteReport(req, res) {
   }
 }
 
+async function getAllReportsByUserId(req, res) {
+  const userId = req.account;
+
+  try {
+    const reports = await getReportsByUserId(userId);
+    res.status(200).json(reports);
+  } catch (error) {
+    res.status(500).json({ error: "Failed to get reports by user ID." });
+  }
+}
+
 module.exports = {
   createReport,
   getReport,
   getAllReports,
   updateReport,
   deleteReport,
+  getAllReportsByUserId,
 };

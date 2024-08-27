@@ -3,40 +3,12 @@ const DiagnosticLab = require("../model/diagnosticLabs");
 const Location = require("../model/location");
 const APIFeatures = require("../helper/apifeature");
 const bcrypt = require("bcrypt");
-// const createDiagnosticLab = async (req, res) => {
-//   const { name, address, contactNumber, image } = req.body;
-
-//   try {
-//     const newLocation = new Location({
-//       address: address.address,
-//       city: address.city,
-//       state: address.state,
-//       pinCode: address.pinCode,
-//     });
-
-//     const savedLocation = await newLocation.save();
-
-//     const newLab = new DiagnosticLab({
-//       name,
-//       address: savedLocation._id,
-//       contactNumber,
-//       image,
-//     });
-
-//     const savedLab = await newLab.save();
-//     res.status(201).json({
-//       success: true,
-//       message: "Diagnostic lab created successfully",
-//       data: savedLab,
-//     });
-//   } catch (error) {
-//     console.error("Error creating diagnostic lab", error);
-//     res.status(500).json({ message: "Server error" });
-//   }
-// };
+const LabBoy = require("../model/labBoy");
+const Appointment = require("../model/appointment");
 
 const createDiagnosticLab = async (req, res) => {
-  const { name, email, address, contactNumber, image, password } = req.body;
+  const { name, email, address, contactNumber, image, profileImg, password } =
+    req.body;
   console.log(password);
   try {
     // Hash the password
@@ -58,6 +30,7 @@ const createDiagnosticLab = async (req, res) => {
       address: savedLocation._id,
       contactNumber,
       image,
+      profileImg,
       password: hashedPassword, // Save the hashed password
     });
 
@@ -72,58 +45,6 @@ const createDiagnosticLab = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
-
-// const getAllDiagnosticLabs = async (req, res) => {
-//   try {
-//     // Create a new instance of APIFeatures
-//     const features = new APIFeatures(
-//       DiagnosticLab.find().select("-password"),
-//       req.query
-//     )
-//       .search()
-//       .filter();
-//     // .sort()
-//     // .limitFields();
-//     console.log(req.query);
-//     // Apply pagination after other operations
-//     const paginatedFeatures = features.paginate();
-
-//     // Execute the query with population
-//     const labs = await paginatedFeatures.query
-//       .populate({
-//         path: "testsOffered",
-//         populate: {
-//           path: "labCategory",
-//           model: "LabCategories",
-//         },
-//       })
-//       .populate("address")
-//       .exec();
-
-//     // Get total count for pagination info
-//     const totalLabs = await DiagnosticLab.countDocuments(
-//       features.query._conditions
-//     );
-
-//     res.status(200).json({
-//       success: true,
-//       message: "List of all labs",
-//       results: labs.length,
-//       totalLabs,
-//       data: labs,
-//       pagination: {
-//         currentPage: paginatedFeatures.queryString.page * 1 || 1,
-//         limit: paginatedFeatures.queryString.limit * 1 || 20,
-//         totalPages: Math.ceil(
-//           totalLabs / (paginatedFeatures.queryString.limit * 1 || 20)
-//         ),
-//       },
-//     });
-//   } catch (error) {
-//     console.error("Error fetching diagnostic labs:", error);
-//     res.status(500).json({ success: false, message: "Server error" });
-//   }
-// };
 
 const getAllDiagnosticLabs = async (req, res) => {
   try {
@@ -188,7 +109,8 @@ const getDiagnosticLabById = async (req, res) => {
 
 const updateDiagnosticLabById = async (req, res) => {
   const { id } = req.params;
-  const { name, email, address, contactNumber, image, password } = req.body;
+  const { name, email, address, contactNumber, image, profileImg, password } =
+    req.body;
   // Debug: Log the entire request body
   console.log("Request Body:", req.body);
   try {
@@ -198,6 +120,7 @@ const updateDiagnosticLabById = async (req, res) => {
     if (email) updateData.email = email;
     if (contactNumber) updateData.contactNumber = contactNumber;
     if (image) updateData.image = image;
+    if (profileImg) updateData.profileImg = profileImg;
 
     // Hash the password if provided
     if (password) {
@@ -240,37 +163,6 @@ const updateDiagnosticLabById = async (req, res) => {
   }
 };
 
-// const updateDiagnosticLabById = async (req, res) => {
-//   const { id } = req.params;
-//   const { name, email, address, contactNumber, image } = req.body;
-
-//   try {
-//     const updatedLab = await DiagnosticLab.findByIdAndUpdate(
-//       id,
-//       {
-//         name,
-//         email,
-//         address,
-//         contactNumber,
-//         image,
-//       },
-//       { new: true }
-//     );
-
-//     if (!updatedLab) {
-//       return res.status(404).json({ message: "Diagnostic lab not found" });
-//     }
-
-//     res.status(200).json({
-//       success: true,
-//       message: "Diagnostic lab updated successfully",
-//       data: updatedLab,
-//     });
-//   } catch (error) {
-//     console.error("Error updating diagnostic lab", error);
-//     res.status(500).json({ message: "Server error" });
-//   }
-// };
 const deleteDiagnosticLabById = async (req, res) => {
   const { id } = req.params;
   console.log("Lab ID", id);
@@ -302,40 +194,6 @@ const deleteDiagnosticLabById = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
-
-// const createDiagnosticTest = async (req, res) => {
-//   const { name, description, price, image, diagnosticLabId } = req.body;
-
-//   try {
-//     // Create a new diagnostic test
-//     const newTest = new DiagnosticTest({
-//       name,
-//       description,
-//       price,
-//       image,
-//     });
-
-//     const savedTest = await newTest.save();
-
-//     // Find the diagnostic lab by ID and update its testsOffered
-//     const lab = await DiagnosticLab.findById(diagnosticLabId);
-//     if (!lab) {
-//       return res.status(404).json({ message: "Diagnostic lab not found" });
-//     }
-
-//     lab.testsOffered.push(savedTest._id);
-//     await lab.save();
-
-//     res.status(201).json({
-//       success: true,
-//       message: "Diagnostic test created successfully",
-//       data: savedTest,
-//     });
-//   } catch (error) {
-//     console.error("Error creating diagnostic test", error);
-//     res.status(500).json({ message: "Server error" });
-//   }
-// };
 
 const createDiagnosticTest = async (req, res) => {
   const { description, price, labCategory, diagnosticLabId } = req.body;
@@ -453,7 +311,16 @@ const toggleHandleView = async (req, res) => {
 
 const getHandleViewTrueLabs = async (req, res) => {
   try {
-    const labs = await DiagnosticLab.find({ handleView: true });
+    const labs = await DiagnosticLab.find({ handleView: true })
+      .select("-password")
+      .populate({
+        path: "testsOffered",
+        populate: {
+          path: "labCategory",
+          model: "LabCategories",
+        },
+      })
+      .populate("address");
 
     if (labs.length === 0) {
       return res
@@ -462,6 +329,39 @@ const getHandleViewTrueLabs = async (req, res) => {
     }
 
     res.status(200).json(labs);
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+const getLabBoyByLabId = async (req, res) => {
+  try {
+    const { labId } = req.params;
+    const labBoy = await LabBoy.find({ assignedLab: labId });
+    res.status(200).json(labBoy);
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+const assignLabBoy = async (req, res) => {
+  try {
+    const { labBoyId, appointmentId } = req.body;
+
+    const appointment = await Appointment.findById(appointmentId);
+
+    if (!appointment) {
+      return res.status(404).json({ message: "Appointment not found." });
+    }
+
+    appointment.labBoy = labBoyId;
+
+    await appointment.save();
+
+    res.status(200).json({
+      message: "Lab boy assigned to appointment successfully.",
+      appointment,
+    });
   } catch (error) {
     res.status(500).json({ message: "Server error", error: error.message });
   }
@@ -478,4 +378,6 @@ module.exports = {
   deleteDiagnosticLabById,
   toggleHandleView,
   getHandleViewTrueLabs,
+  getLabBoyByLabId,
+  assignLabBoy,
 };

@@ -48,7 +48,8 @@ router.post(
     "franchise",
     "councilor",
     "lab",
-    "agent"
+    "agent",
+    "labBoy"
   ),
   signOutAdmin
 );

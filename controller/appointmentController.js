@@ -398,7 +398,14 @@ const updateLabTestStatus = async (req, res) => {
     const { status } = req.body;
 
     // Valid statuses for the test
-    const validStatuses = ["Pending", "In Progress", "Completed", "Closed"];
+    const validStatuses = [
+      "Pending",
+      "In Progress",
+      "Interact with Client",
+      "Collected Sample",
+      "Completed",
+      "Closed",
+    ];
 
     // Validate status value
     if (!validStatuses.includes(status)) {
@@ -768,6 +775,102 @@ const getAppointmentsByUserId = async (req, res) => {
   }
 };
 
+const getAllAppointmentsByLabBoyId = async (req, res) => {
+  try {
+    const { labBoyId } = req.params;
+    const { page = 1, limit = 10 } = req.query;
+    const skip = (page - 1) * limit;
+
+    // Ensure labId is converted to ObjectId if needed
+    const appointments = await Appointment.find({
+      labBoy: labBoyId,
+      "labs.tests.status": {
+        $in: [
+          "In Progress",
+          "Interact with Client",
+          "Collected Sample",
+          "Completed",
+          "Closed",
+        ],
+      },
+    })
+      .skip(parseInt(skip))
+      .limit(parseInt(limit))
+      .populate({
+        path: "referral",
+        model: "Agent",
+      })
+      .populate({
+        path: "labs.lab",
+        model: "DiagnosticLab",
+      })
+      .populate({
+        path: "labs.tests.test",
+        model: "DiagnosticTest",
+        populate: {
+          path: "labCategory",
+          model: "LabCategories",
+        },
+      })
+      .populate({
+        path: "createdBy",
+      })
+      .populate({
+        path: "labBoy",
+        model: "LabBoy",
+        select: "-password",
+      })
+      .exec();
+
+    // Get total number of appointments to calculate total pages
+    const totalAppointments = await Appointment.countDocuments({
+      labBoy: labBoyId,
+      "labs.tests.status": { $in: ["In Progress", "Completed", "Closed"] },
+    });
+
+    // Manually populate the updatedBy field
+    const populatedAppointments = await Promise.all(
+      appointments.map(async (appointment) => {
+        const testsWithUpdatedBy = await Promise.all(
+          appointment.labs.tests.map(async (test) => {
+            let updatedByModel = null;
+            if (test.updatedByModel === "User") {
+              updatedByModel = await User.findById(test.updatedBy);
+            } else if (test.updatedByModel === "DiagnosticLab") {
+              updatedByModel = await DiagnosticLab.findById(test.updatedBy);
+            } else if (test.updatedByModel === "SuperAdmin") {
+              updatedByModel = await User.findById(test.updatedBy);
+            }
+            return { ...test.toObject(), updatedBy: updatedByModel };
+          })
+        );
+
+        return {
+          ...appointment.toObject(),
+          labs: {
+            ...appointment.labs.toObject(),
+            tests: testsWithUpdatedBy,
+          },
+        };
+      })
+    );
+
+    res.status(200).json({
+      data: populatedAppointments,
+      totalAppointments: totalAppointments,
+      currentPage: parseInt(page),
+      limit: parseInt(limit),
+      totalPages: Math.ceil(totalAppointments / limit),
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({
+      error: "Error fetching appointments",
+      details: err.message,
+    });
+  }
+};
+
 const approveAppointment = async (req, res) => {
   const { appointmentId } = req.params;
 
@@ -1062,7 +1165,15 @@ const findAppointmentsByLabAndTestStatus = async (req, res) => {
     // Ensure labId is converted to ObjectId if needed
     const appointments = await Appointment.find({
       "labs.lab": labId,
-      "labs.tests.status": { $in: ["In Progress", "Completed", "Closed"] },
+      "labs.tests.status": {
+        $in: [
+          "In Progress",
+          "Interact with Client",
+          "Collected Sample",
+          "Completed",
+          "Closed",
+        ],
+      },
     })
       .skip(parseInt(skip))
       .limit(parseInt(limit))
@@ -1084,6 +1195,11 @@ const findAppointmentsByLabAndTestStatus = async (req, res) => {
       })
       .populate({
         path: "createdBy",
+      })
+      .populate({
+        path: "labBoy",
+        model: "LabBoy",
+        select: "-password",
       })
       .exec();
 
@@ -1378,6 +1494,7 @@ module.exports = {
   getAllAppointmentsByFranchise,
   getAllAppointmentsBySuperAdmin,
   getAllAppointments,
+  getAllAppointmentsByLabBoyId,
   getAppointmentsByUserId,
   approveAppointment,
   rejectAppointment,

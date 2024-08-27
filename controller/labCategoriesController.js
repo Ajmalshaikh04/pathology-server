@@ -8,8 +8,8 @@ const formatResponse = (status, data = null, error = null) => {
 // Create a new lab category
 exports.createLabCategory = async (req, res) => {
   try {
-    const { name, image, profileImg } = req.body;
-    const newLabCategory = new LabCategories({ name, image, profileImg });
+    const { name, image } = req.body;
+    const newLabCategory = new LabCategories({ name, image });
     await newLabCategory.save();
     res.status(201).json(formatResponse(201, newLabCategory));
   } catch (error) {
@@ -78,7 +78,7 @@ exports.updateLabCategory = async (req, res) => {
     const { name, image, profileImg } = req.body;
     const updatedLabCategory = await LabCategories.findByIdAndUpdate(
       req.params.id,
-      { name, image, profileImg },
+      { name, image },
       { new: true, runValidators: true }
     );
     if (!updatedLabCategory) {

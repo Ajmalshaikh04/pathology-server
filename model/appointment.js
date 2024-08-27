@@ -8,7 +8,14 @@ const testSchema = new mongoose.Schema({
   test: { type: mongoose.Schema.Types.ObjectId, ref: "DiagnosticTest" },
   status: {
     type: String,
-    enum: ["Pending", "In Progress", "Completed", "Closed"],
+    enum: [
+      "Pending",
+      "In Progress",
+      "Interact with Client",
+      "Collected Sample",
+      "Completed",
+      "Closed",
+    ],
     default: "Pending",
   },
 
@@ -18,7 +25,7 @@ const testSchema = new mongoose.Schema({
   },
   updatedByModel: {
     type: String,
-    enum: ["User", "Franchise", "DiagnosticLab"],
+    enum: ["User", "Franchise", "DiagnosticLab", "LabBoy"],
   },
   updatedAt: {
     type: Date,
@@ -45,6 +52,10 @@ const appointmentSchema = new mongoose.Schema(
     referral: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Agent",
+    },
+    labBoy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "LabBoy",
     },
     labs: labSchema,
     status: {
