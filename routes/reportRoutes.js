@@ -10,6 +10,7 @@ const {
 } = require("../controller/reportController");
 const { accountMiddleware } = require("../middleware/accoundvalidate");
 
+router.get("/reports/user", accountMiddleware, getAllReportsByUserId);
 // Create a new report
 router.post("/reports", createReport);
 
@@ -24,7 +25,5 @@ router.put("/reports/:id", updateReport);
 
 // Delete a report by ID
 router.delete("/reports/:id", deleteReport);
-
-router.get("/reports/user", accountMiddleware, getAllReportsByUserId);
 
 module.exports = router;
