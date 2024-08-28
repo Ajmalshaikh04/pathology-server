@@ -32,6 +32,7 @@ app.use(require("./routes/agentsRoutes"));
 app.use(require("./routes/appointmentRoutes"));
 app.use(require("./routes/reportRoutes"));
 app.use(require("./routes/labBoyRoutes"));
+app.use(require("./routes/healthProblemRoutes"));
 
 app.listen(process.env.PORT, (port) => {
   console.log(`Server is running on port ${process.env.PORT}`);

@@ -77,6 +77,12 @@ const appointmentSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Franchise",
     },
+    healthProblem: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "HealthProblem",
+      },
+    ],
     commission: {
       superAdminToAgent: {
         type: Number,
