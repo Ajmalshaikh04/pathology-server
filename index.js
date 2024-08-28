@@ -2,6 +2,8 @@ const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
 const bodyParser = require("body-parser");
+const crypto = require("node:crypto");
+const axios = require("axios");
 const app = express();
 app.use(cors());
 app.use(bodyParser.json({ limit: "10mb" }));
@@ -33,6 +35,107 @@ app.use(require("./routes/appointmentRoutes"));
 app.use(require("./routes/reportRoutes"));
 app.use(require("./routes/labBoyRoutes"));
 app.use(require("./routes/healthProblemRoutes"));
+
+const MERCHANT_ID = "PGTESTPAYUAT77"; // Your test merchant ID
+const SALT_INDEX = "1"; // Your test salt index
+const SALT_VALUE = "14fa5465-f8a7-443f-8477-f986b8fcfde9"; // Your test salt value
+
+const BASE_URL = "https://api-preprod.phonepe.com/apis/hermes";
+const PG_PAY_ENDPOINT = "/pg/v1/pay";
+const PG_STATUS_ENDPOINT = "/pg/v1/status/{merchantTransactionId}";
+
+// Helper function to generate checksum
+function generateChecksum(payload, endpoint, salt) {
+  const data = payload + endpoint + salt;
+  return crypto.createHash("sha256").update(data).digest("hex");
+}
+
+// Helper function to generate x-verify header
+function generateXVerifyHeader(checksum, saltIndex) {
+  return `${checksum}###${saltIndex}`;
+}
+
+// Endpoint to initiate a payment
+app.post("/initiatePayment", async (req, res) => {
+  const {
+    amount,
+    merchantTransactionId,
+    merchantUserId,
+    mobileNumber,
+    callbackUrl,
+  } = req.body;
+
+  const payloadObject = {
+    merchantId: MERCHANT_ID,
+    merchantTransactionId,
+    merchantUserId,
+    amount,
+    callbackUrl,
+    mobileNumber,
+    paymentInstrument: {
+      type: "PAY_PAGE",
+    },
+  };
+
+  const payload = Buffer.from(JSON.stringify(payloadObject)).toString("base64");
+
+  const checksum = generateChecksum(payload, PG_PAY_ENDPOINT, SALT_VALUE);
+  const xVerify = generateXVerifyHeader(checksum, SALT_INDEX);
+  console.log("payload::::", payload);
+  console.log("checksum::::", checksum);
+  console.log("xVerify::::", xVerify);
+
+  try {
+    const response = await axios.post(
+      `${BASE_URL}${PG_PAY_ENDPOINT}`,
+      { request: payload },
+      {
+        headers: {
+          "Content-Type": "application/json",
+          "X-VERIFY": xVerify,
+          "X-MERCHANT-ID": MERCHANT_ID,
+        },
+      }
+    );
+
+    res.json(response.data);
+  } catch (error) {
+    console.error("Error initiating payment:", error.message);
+    res.status(500).json({ error: "Failed to initiate payment" });
+  }
+});
+
+// Endpoint to check payment status
+app.get("/paymentStatus/:merchantTransactionId", async (req, res) => {
+  const { merchantTransactionId } = req.params;
+  const endpoint = PG_STATUS_ENDPOINT.replace(
+    "{merchantTransactionId}",
+    merchantTransactionId
+  );
+  const payload = "";
+  console.log(endpoint);
+
+  const checksum = generateChecksum(payload, endpoint, SALT_VALUE);
+  const xVerify = generateXVerifyHeader(checksum, SALT_INDEX);
+  const plink = `${BASE_URL}${endpoint}`;
+  console.log(plink);
+
+  try {
+    const response = await axios.get(`${BASE_URL}${endpoint}`, {
+      headers: {
+        "Content-Type": "application/json",
+        "X-VERIFY": xVerify,
+        "X-MERCHANT-ID": MERCHANT_ID,
+      },
+    });
+    console.log(response);
+
+    res.json(response.data);
+  } catch (error) {
+    console.error("Error fetching payment status:", error.message);
+    res.status(500).json({ error: "Failed to fetch payment status" });
+  }
+});
 
 app.listen(process.env.PORT, (port) => {
   console.log(`Server is running on port ${process.env.PORT}`);

@@ -25,6 +25,6 @@ router.put("/reports/:id", updateReport);
 // Delete a report by ID
 router.delete("/reports/:id", deleteReport);
 
-router.get("/reports/user/:userId", accountMiddleware, getAllReportsByUserId);
+router.get("/reports/user", accountMiddleware, getAllReportsByUserId);
 
 module.exports = router;
