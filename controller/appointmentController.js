@@ -451,6 +451,9 @@ const updateLabTestStatus = async (req, res) => {
       case "lab":
         updatedByModel = "DiagnosticLab";
         break;
+      case "labBoy":
+        updatedByModel = "LabBoy";
+        break;
       default:
         return res.status(400).json({ message: "Invalid user role" });
     }

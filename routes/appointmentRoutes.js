@@ -36,7 +36,7 @@ router.put("/appointments/:id", updateAppointment);
 router.put(
   "/appointments/:id/tests/:testId",
   accountMiddleware,
-  roleMiddleware("admin", "superAdmin", "councilor", "lab"),
+  roleMiddleware("admin", "superAdmin", "councilor", "lab", "labBoy"),
   updateLabTestStatus
 );
 router.delete("/appointments/:id", deleteAppointment);
