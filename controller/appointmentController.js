@@ -230,11 +230,40 @@ const createAppointment = async (req, res) => {
       createdBy: req.account,
       createdByModel,
       totalAmount,
+      paymentStatus: "PENDING",
     });
 
     await newAppointment.save();
-    res.status(201).json(newAppointment);
+
+    // PhonePe integration details
+    const merchantId = process.env.MERCHANT_ID;
+    const saltKey = process.env.SALT_KEY;
+    const saltIndex = process.env.SALT_INDEX;
+    const merchantTransactionId = newAppointment._id.toString();
+
+    // Create base64 encoded payload
+    const payload = {
+      merchantId: merchantId,
+      merchantTransactionId: merchantTransactionId,
+      merchantUserId: req.account,
+      amount: totalAmount * 100, // Convert to paise
+      callbackUrl: `${process.env.SERVER_URL}/api/payment-callback`,
+      mobileNumber: req.body.mobileNumber, // Ensure this is sent from the frontend
+      paymentInstrument: {
+        type: "PAY_PAGE",
+      },
+    };
+
+    const base64Payload = Buffer.from(JSON.stringify(payload)).toString(
+      "base64"
+    );
+
+    res.status(201).json({
+      appointment: newAppointment,
+      phonepeDetails: payload,
+    });
   } catch (error) {
+    console.error("Error creating appointment:", error);
     res.status(500).json({ message: error.message });
   }
 };

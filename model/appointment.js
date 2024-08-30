@@ -98,6 +98,7 @@ const appointmentSchema = new mongoose.Schema(
       },
     },
     totalAmount: { type: Number, required: true },
+    paymentStatus: String,
   },
   { timestamps: true }
 );
