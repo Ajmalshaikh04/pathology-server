@@ -4,6 +4,7 @@ const cors = require("cors");
 const bodyParser = require("body-parser");
 const crypto = require("node:crypto");
 const axios = require("axios");
+const Appointment = require("./model/appointment");
 const app = express();
 app.use(cors());
 app.use(bodyParser.json({ limit: "10mb" }));
@@ -141,6 +142,7 @@ const handlePaymentCallback = async (req, res) => {
   try {
     const { merchantId, merchantTransactionId, transactionId, status } =
       req.body;
+    console.log("handlePaymentCallback", req.body);
 
     // Verify the payment status
     if (merchantId !== process.env.MERCHANT_ID) {
