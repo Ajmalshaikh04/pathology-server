@@ -158,10 +158,10 @@ const handlePaymentCallback = async (req, res) => {
 
     // In a real-world scenario, you should verify the payment with PhonePe's status check API here
 
-    res.json({ status: "PAYMENT SUCCESSFUL" });
+    res.json({ status: appointment.paymentStatus });
   } catch (error) {
     console.error("Error processing payment callback:", error);
-    res.status(500).json({ message: "Error processing payment callback" });
+    res.status(500).json({ message: "Error processing payment" });
   }
 };
 
