@@ -139,11 +139,11 @@ function generateXVerifyHeader(checksum, saltIndex) {
 // Add this new endpoint to handle payment callback
 const handlePaymentCallback = async (req, res) => {
   try {
-    const { merchantId, merchantTransactionId, transactionId, amount, status } =
+    const { merchantId, merchantTransactionId, transactionId, status } =
       req.body;
 
     // Verify the payment status
-    if (merchantId !== MERCHANT_ID) {
+    if (merchantId !== process.env.MERCHANT_ID) {
       return res.status(400).json({ message: "Invalid merchant ID" });
     }
 
@@ -158,7 +158,7 @@ const handlePaymentCallback = async (req, res) => {
 
     // In a real-world scenario, you should verify the payment with PhonePe's status check API here
 
-    res.json({ status: "SUCCESS" });
+    res.json({ status: "PAYMENT SUCCESSFUL" });
   } catch (error) {
     console.error("Error processing payment callback:", error);
     res.status(500).json({ message: "Error processing payment callback" });

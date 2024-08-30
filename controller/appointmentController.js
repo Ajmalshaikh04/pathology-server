@@ -240,7 +240,7 @@ const createAppointment = async (req, res) => {
     const saltKey = process.env.SALT_KEY;
     const saltIndex = process.env.SALT_INDEX;
     const merchantTransactionId = newAppointment._id.toString();
-
+    const user = await User.findOne({ _id: req.account });
     // Create base64 encoded payload
     const payload = {
       merchantId: merchantId,
@@ -248,7 +248,7 @@ const createAppointment = async (req, res) => {
       merchantUserId: req.account,
       amount: totalAmount * 100, // Convert to paise
       callbackUrl: `${process.env.SERVER_URL}/api/payment-callback`,
-      mobileNumber: newAppointment.createdBy.mobileNumber, // Ensure this is sent from the frontend
+      mobileNumber: user.mobile,
       paymentInstrument: {
         type: "PAY_PAGE",
       },

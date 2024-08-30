@@ -99,6 +99,7 @@ const appointmentSchema = new mongoose.Schema(
     },
     totalAmount: { type: Number, required: true },
     paymentStatus: String,
+    transactionId: String,
   },
   { timestamps: true }
 );
