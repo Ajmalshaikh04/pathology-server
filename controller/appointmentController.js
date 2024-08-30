@@ -243,12 +243,13 @@ const createAppointment = async (req, res) => {
 
     // Create base64 encoded payload
     const payload = {
+      saltKey,
       merchantId: merchantId,
       merchantTransactionId: merchantTransactionId,
       merchantUserId: req.account,
       amount: totalAmount * 100, // Convert to paise
       callbackUrl: `${process.env.SERVER_URL}/api/payment-callback`,
-      mobileNumber: req.body.mobileNumber, // Ensure this is sent from the frontend
+      mobileNumber: newAppointment.createdBy.mobileNumber, // Ensure this is sent from the frontend
       paymentInstrument: {
         type: "PAY_PAGE",
       },
@@ -260,7 +261,7 @@ const createAppointment = async (req, res) => {
 
     res.status(201).json({
       appointment: newAppointment,
-      phonepeDetails: payload,
+      phonepeDetails: { payload, base64Payload },
     });
   } catch (error) {
     console.error("Error creating appointment:", error);
