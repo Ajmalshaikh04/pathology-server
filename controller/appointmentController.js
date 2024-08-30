@@ -243,7 +243,6 @@ const createAppointment = async (req, res) => {
 
     // Create base64 encoded payload
     const payload = {
-      saltKey,
       merchantId: merchantId,
       merchantTransactionId: merchantTransactionId,
       merchantUserId: req.account,
