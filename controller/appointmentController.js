@@ -261,7 +261,7 @@ const createAppointment = async (req, res) => {
 
     res.status(201).json({
       appointment: newAppointment,
-      phonepeDetails: { payload, base64Payload },
+      phonepeDetails: { payload, base64Payload, saltKey, saltIndex },
     });
   } catch (error) {
     console.error("Error creating appointment:", error);
