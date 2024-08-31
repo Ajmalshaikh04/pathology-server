@@ -164,7 +164,7 @@ const createAppointment = async (req, res) => {
       appointmentDate,
       commission,
       healthProblem,
-      address,
+      address: { address, city, state, pinCode },
       locationAddress,
     } = req.body;
 
@@ -217,14 +217,15 @@ const createAppointment = async (req, res) => {
         ? "User"
         : req.role.charAt(0).toUpperCase() + req.role.slice(1);
 
-    // Create location document
+    // Create and save location document
     const location = new Location({
-      address: address.address,
-      city: address.city,
-      state: address.state,
-      pinCode: address.pinCode,
+      address,
+      city,
+      state,
+      pinCode,
     });
-    console.log(location);
+    await location.save();
+    console.log("Saved location:", location);
 
     const newAppointment = new Appointment({
       type,
