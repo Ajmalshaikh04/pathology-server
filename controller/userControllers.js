@@ -576,10 +576,10 @@ const signInAdmin = async (req, res) => {
     return res.status(200).json({
       success: true,
       message: "Signin Successful",
-      role: foundAccount.role,
-      location: foundAccount.location,
+      // role: foundAccount.role,
+      // location: foundAccount.location,
       token: token,
-      userId: foundAccount._id,
+      // userId: foundAccount._id,
     });
   } catch (err) {
     console.error(err);
@@ -1061,6 +1061,19 @@ const getAllAgents = async (req, res) => {
   }
 };
 
+// Delete a LabBoy by ID
+const deleteUserById = async (req, res) => {
+  try {
+    const user = await User.findByIdAndDelete(req.params.id);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    res.status(200).json({ message: "User deleted successfully" });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
 module.exports = {
   logOutUser,
   signOutAdmin,
@@ -1076,4 +1089,5 @@ module.exports = {
   getAllAgents,
   assignCounselor,
   getAllAssignedUsersByCounselorId,
+  deleteUserById,
 };

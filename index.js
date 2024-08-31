@@ -37,136 +37,83 @@ app.use(require("./routes/reportRoutes"));
 app.use(require("./routes/labBoyRoutes"));
 app.use(require("./routes/healthProblemRoutes"));
 
-const MERCHANT_ID = "PGTESTPAYUAT77";
-const SALT_INDEX = "1";
-const SALT_VALUE = "14fa5465-f8a7-443f-8477-f986b8fcfde9";
-
-const BASE_URL = "https://api-preprod.phonepe.com/apis/hermes";
-const PG_PAY_ENDPOINT = "/pg/v1/pay";
-const PG_STATUS_ENDPOINT = "/pg/v1/status/{merchantTransactionId}";
-
-// Helper function to generate checksum
-function generateChecksum(payload, endpoint, salt) {
-  const data = payload + endpoint + salt;
-  return crypto.createHash("sha256").update(data).digest("hex");
-}
-
-// Helper function to generate x-verify header
-function generateXVerifyHeader(checksum, saltIndex) {
-  return `${checksum}###${saltIndex}`;
-}
-
-// Endpoint to initiate a payment
-// app.post("/initiatePayment", async (req, res) => {
-//   const {
-//     amount,
-//     merchantTransactionId,
-//     merchantUserId,
-//     mobileNumber,
-//     callbackUrl,
-//   } = req.body;
-
-//   const payloadObject = {
-//     merchantId: MERCHANT_ID,
-//     merchantTransactionId,
-//     merchantUserId,
-//     amount,
-//     callbackUrl,
-//     mobileNumber,
-//     paymentInstrument: {
-//       type: "PAY_PAGE",
-//     },
-//   };
-
-//   const payload = Buffer.from(JSON.stringify(payloadObject)).toString("base64");
-
-//   const checksum = generateChecksum(payload, PG_PAY_ENDPOINT, SALT_VALUE);
-//   const xVerify = generateXVerifyHeader(checksum, SALT_INDEX);
-//   console.log("payload::::", payload);
-//   console.log("checksum::::", checksum);
-//   console.log("xVerify::::", xVerify);
-
-//   try {
-//     const response = await axios.post(
-//       `${BASE_URL}${PG_PAY_ENDPOINT}`,
-//       { request: payload },
-//       {
-//         headers: {
-//           "Content-Type": "application/json",
-//           "X-VERIFY": xVerify,
-//           "X-MERCHANT-ID": MERCHANT_ID,
-//         },
-//       }
-//     );
-
-//     res.json(response.data);
-//   } catch (error) {
-//     console.error("Error initiating payment:", error.message);
-//     res.status(500).json({ error: "Failed to initiate payment" });
-//   }
-// });
-
-// // Endpoint to check payment status
-// app.get("/paymentStatus/:merchantTransactionId", async (req, res) => {
-//   const { merchantTransactionId } = req.params;
-//   const endpoint = PG_STATUS_ENDPOINT.replace(
-//     "{merchantTransactionId}",
-//     merchantTransactionId
-//   );
-//   const payload = "";
-//   console.log(endpoint);
-
-//   const checksum = generateChecksum(payload, endpoint, SALT_VALUE);
-//   const xVerify = generateXVerifyHeader(checksum, SALT_INDEX);
-//   const plink = `${BASE_URL}${endpoint}`;
-//   console.log(plink);
-
-//   try {
-//     const response = await axios.get(`${BASE_URL}${endpoint}`, {
-//       headers: {
-//         "Content-Type": "application/json",
-//         "X-VERIFY": xVerify,
-//         "X-MERCHANT-ID": MERCHANT_ID,
-//       },
-//     });
-//     console.log(response);
-
-//     res.json(response.data);
-//   } catch (error) {
-//     console.error("Error fetching payment status:", error.message);
-//     res.status(500).json({ error: "Failed to fetch payment status" });
-//   }
-// });
-// Add this new endpoint to handle payment callback
 const handlePaymentCallback = async (req, res) => {
   try {
-    const { merchantId, merchantTransactionId, transactionId, status } =
-      req.body;
-    console.log("handlePaymentCallback", req.body);
+    const { merchantId, merchantTransactionId, transactionId } = req.body;
+
+    console.log("Received payment callback:", req.body);
 
     // Verify the payment status
     if (merchantId !== process.env.MERCHANT_ID) {
+      console.error("Invalid merchant ID:", merchantId);
       return res.status(400).json({ message: "Invalid merchant ID" });
     }
 
     const appointment = await Appointment.findById(merchantTransactionId);
     if (!appointment) {
+      console.error("Appointment not found:", merchantTransactionId);
       return res.status(404).json({ message: "Appointment not found" });
     }
 
-    appointment.paymentStatus = status;
-    appointment.transactionId = transactionId;
-    await appointment.save();
+    const convertedId = `MID${merchantTransactionId}`;
 
-    // In a real-world scenario, you should verify the payment with PhonePe's status check API here
+    // Check payment status with PhonePe's status check API
+    const checkStatusResponse = await checkPaymentStatus(
+      merchantId,
+      convertedId
+    );
 
-    res.json({ status: appointment.paymentStatus });
+    if (checkStatusResponse.success) {
+      appointment.paymentStatus = checkStatusResponse.code;
+      appointment.transactionId = transactionId;
+      await appointment.save();
+
+      res.json({ status: appointment.paymentStatus });
+    } else {
+      console.error("Payment verification failed:", checkStatusResponse);
+      res.status(400).json({ message: "Payment verification failed" });
+    }
   } catch (error) {
     console.error("Error processing payment callback:", error);
     res.status(500).json({ message: "Error processing payment" });
   }
 };
 
+const checkPaymentStatus = async (merchantId, merchantTransactionId) => {
+  const saltKey = process.env.SALT_KEY;
+  const saltIndex = process.env.SALT_INDEX;
+
+  // Construct the API endpoint for checking payment status
+  const endpoint = `/pg/v1/status/${merchantId}/${merchantTransactionId}`;
+
+  // Correct the string format to match PhonePe's requirement
+  const stringToHash = `${endpoint}${saltKey}`;
+  const sha256 = crypto.createHash("sha256").update(stringToHash).digest("hex");
+  const xVerify = `${sha256}###${saltIndex}`;
+
+  try {
+    // Make a GET request to the PhonePe API
+    const response = await axios.get(
+      `https://api-preprod.phonepe.com/apis/pg-sandbox${endpoint}`,
+      {
+        headers: {
+          "Content-Type": "application/json",
+          "X-VERIFY": xVerify,
+          "X-MERCHANT-ID": merchantId,
+        },
+      }
+    );
+    return response.data;
+  } catch (error) {
+    console.error(
+      "Error checking payment status:",
+      error.response?.data || error.message
+    );
+    throw new Error("Failed to check payment status with PhonePe");
+  }
+};
+
+// Define the payment callback route
 app.post("/api/payment-callback", handlePaymentCallback);
 
 app.listen(process.env.PORT, (port) => {

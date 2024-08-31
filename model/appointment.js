@@ -37,11 +37,6 @@ const labSchema = new mongoose.Schema({
   tests: [testSchema],
 });
 
-// const commissionSchema = new mongoose.Schema({
-//   superAdminToFranchise: { type: Number, min: 0, max: 100, default: 20 },
-//   superAdminToAgent: { type: Number, min: 0, max: 100, default: 20 },
-// });
-
 const appointmentSchema = new mongoose.Schema(
   {
     type: { type: String, required: true },
@@ -100,6 +95,11 @@ const appointmentSchema = new mongoose.Schema(
     totalAmount: { type: Number, required: true },
     paymentStatus: String,
     transactionId: String,
+    address: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Location",
+    },
+    locationAddress: String,
   },
   { timestamps: true }
 );

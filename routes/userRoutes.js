@@ -16,6 +16,7 @@ const {
   resendOTP,
   updateProfile,
   getProfile,
+  deleteUserById,
 } = require("../controller/userControllers");
 const {
   accountMiddleware,
@@ -86,5 +87,7 @@ router.get(
   roleMiddleware("superAdmin", "councilor"),
   getAllAssignedUsersByCounselorId
 );
+
+router.delete("/delete-user/:id", deleteUserById);
 
 module.exports = router;

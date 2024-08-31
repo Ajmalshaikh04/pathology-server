@@ -39,7 +39,7 @@ router.put(
   roleMiddleware("admin", "superAdmin", "councilor", "lab", "labBoy"),
   updateLabTestStatus
 );
-router.delete("/appointments/:id", deleteAppointment);
+router.delete("/appointment/:id", deleteAppointment);
 
 router.get("/get-all-appointments", getAllAppointments);
 router.get(

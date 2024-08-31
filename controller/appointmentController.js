@@ -163,6 +163,9 @@ const createAppointment = async (req, res) => {
       labs,
       appointmentDate,
       commission,
+      healthProblem,
+      address,
+      locationAddress,
     } = req.body;
 
     let referralId = null;
@@ -214,6 +217,15 @@ const createAppointment = async (req, res) => {
         ? "User"
         : req.role.charAt(0).toUpperCase() + req.role.slice(1);
 
+    // Create location document
+    const location = new Location({
+      address: address.address,
+      city: address.city,
+      state: address.state,
+      pinCode: address.pinCode,
+    });
+    console.log(location);
+
     const newAppointment = new Appointment({
       type,
       age,
@@ -231,6 +243,9 @@ const createAppointment = async (req, res) => {
       createdByModel,
       totalAmount,
       paymentStatus: "PENDING",
+      healthProblem,
+      address: location._id,
+      locationAddress,
     });
 
     await newAppointment.save();
@@ -292,6 +307,14 @@ const getUserAppointments = async (req, res) => {
       .populate({
         path: "labs.tests.updatedBy",
         model: "User",
+      })
+      .populate({
+        path: "healthProblem",
+        model: "HealthProblem",
+      })
+      .populate({
+        path: "address",
+        model: "Location",
       });
     res.json(appointments);
   } catch (error) {
@@ -503,12 +526,10 @@ const deleteAppointment = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const appointment = await Appointment.findById(id);
+    const appointment = await Appointment.findByIdAndDelete(id);
     if (!appointment) {
       return res.status(404).json({ message: "Appointment not found" });
     }
-
-    await appointment.remove();
 
     res.status(200).json({ message: "Appointment deleted successfully" });
   } catch (error) {
@@ -726,6 +747,14 @@ const getAllAppointments = async (req, res) => {
       })
       .populate({
         path: "franchise",
+      })
+      .populate({
+        path: "healthProblem",
+        model: "HealthProblem",
+      })
+      .populate({
+        path: "address",
+        model: "Location",
       })
       .exec();
 
