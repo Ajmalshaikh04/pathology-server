@@ -528,9 +528,14 @@ const signInAdmin = async (req, res) => {
 
     // Check for invalid role
     if (
-      !["superAdmin", "franchise", "lab", "agent", "labBoy"].includes(
-        foundAccount.role
-      )
+      ![
+        "superAdmin",
+        "councilor",
+        "franchise",
+        "lab",
+        "agent",
+        "labBoy",
+      ].includes(foundAccount.role)
     ) {
       return res.status(403).json({
         success: false,
@@ -1074,6 +1079,59 @@ const deleteUserById = async (req, res) => {
   }
 };
 
+// Create a new councilor with a location
+const createCouncilor = async (req, res) => {
+  try {
+    const { name, mobile, email, password, address, city, state, pinCode } =
+      req.body;
+
+    // Check if email or mobile already exists
+    const existingUser = await User.findOne({ $or: [{ email }, { mobile }] });
+    if (existingUser) {
+      return res
+        .status(400)
+        .json({ message: "Email or mobile already in use." });
+    }
+
+    // Hash the password before saving
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Create new location document
+    const newLocation = new Location({
+      address,
+      city,
+      state,
+      pinCode,
+    });
+
+    const savedLocation = await newLocation.save();
+
+    // Create new councilor document
+    const newCouncilor = new User({
+      name,
+      mobile,
+      email,
+      password: hashedPassword,
+      role: "councilor",
+      adminDetails: {
+        location: savedLocation._id, // Reference to the location ID
+      },
+    });
+
+    const savedCouncilor = await newCouncilor.save();
+
+    return res
+      .status(201)
+      .json({
+        message: "Councilor created successfully.",
+        councilor: savedCouncilor,
+      });
+  } catch (error) {
+    console.error("Error creating councilor:", error);
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
 module.exports = {
   logOutUser,
   signOutAdmin,
@@ -1090,4 +1148,5 @@ module.exports = {
   assignCounselor,
   getAllAssignedUsersByCounselorId,
   deleteUserById,
+  createCouncilor,
 };

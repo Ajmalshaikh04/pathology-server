@@ -60,7 +60,8 @@ const handlePaymentCallback = async (req, res) => {
     // Check payment status with PhonePe's status check API
     const checkStatusResponse = await checkPaymentStatus(
       merchantId,
-      convertedId
+      convertedId,
+      appointment.createdBy.mobile
     );
 
     if (checkStatusResponse.success) {
@@ -79,7 +80,11 @@ const handlePaymentCallback = async (req, res) => {
   }
 };
 
-const checkPaymentStatus = async (merchantId, merchantTransactionId) => {
+const checkPaymentStatus = async (
+  merchantId,
+  merchantTransactionId,
+  mobileNumber
+) => {
   const saltKey = process.env.SALT_KEY;
   const saltIndex = process.env.SALT_INDEX;
 
@@ -87,7 +92,7 @@ const checkPaymentStatus = async (merchantId, merchantTransactionId) => {
   const endpoint = `/pg/v1/status/${merchantId}/${merchantTransactionId}`;
 
   // Correct the string format to match PhonePe's requirement
-  const stringToHash = `${endpoint}${saltKey}`;
+  const stringToHash = `${endpoint}${saltKey}${mobileNumber}`;
   const sha256 = crypto.createHash("sha256").update(stringToHash).digest("hex");
   const xVerify = `${sha256}###${saltIndex}`;
 
@@ -95,6 +100,7 @@ const checkPaymentStatus = async (merchantId, merchantTransactionId) => {
     // Make a GET request to the PhonePe API
     const response = await axios.get(
       `https://api-preprod.phonepe.com/apis/pg-sandbox${endpoint}`,
+      // `https://api.phonepe.com/apis/hermes/${endpoint}`,
       {
         headers: {
           "Content-Type": "application/json",

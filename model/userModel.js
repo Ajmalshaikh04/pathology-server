@@ -18,9 +18,23 @@ const User = new mongoose.Schema(
       unique: true,
     },
     password: { type: String, required: true },
+    // otp: {
+    //   type: String,
+    //   required: true,
+    // },
     otp: {
       type: String,
-      required: true,
+      // Use a custom validator to conditionally require OTP based on the role
+      validate: {
+        validator: function (value) {
+          // OTP is required only if the role is not 'councilor'
+          if (this.role !== "councilor") {
+            return value != null && value.trim() !== "";
+          }
+          return true; // OTP is not required for councilors
+        },
+        message: "OTP is required for this role.",
+      },
     },
     role: {
       type: String,

@@ -100,6 +100,7 @@ const appointmentSchema = new mongoose.Schema(
       ref: "Location",
     },
     locationAddress: String,
+    visitType: String,
   },
   { timestamps: true }
 );

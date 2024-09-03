@@ -17,6 +17,7 @@ const {
   updateProfile,
   getProfile,
   deleteUserById,
+  createCouncilor,
 } = require("../controller/userControllers");
 const {
   accountMiddleware,
@@ -87,6 +88,9 @@ router.get(
   roleMiddleware("superAdmin", "councilor"),
   getAllAssignedUsersByCounselorId
 );
+
+// Route to create a new councilor
+router.post("/create-councilors", createCouncilor);
 
 router.delete("/delete-user/:id", deleteUserById);
 

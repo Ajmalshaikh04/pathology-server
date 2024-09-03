@@ -166,6 +166,7 @@ const createAppointment = async (req, res) => {
       healthProblem,
       address: { address, city, state, pinCode },
       locationAddress,
+      visitType,
     } = req.body;
 
     let referralId = null;
@@ -247,10 +248,31 @@ const createAppointment = async (req, res) => {
       healthProblem,
       address: location._id,
       locationAddress,
+      visitType,
     });
 
     await newAppointment.save();
 
+    // Find a councilor with the matching pin code by populating their location
+    const councilors = await User.find({
+      role: "councilor",
+    }).populate({
+      path: "adminDetails.location",
+      match: { pinCode: pinCode },
+    });
+
+    const councilor = councilors.find((c) => c.adminDetails.location);
+
+    if (councilor) {
+      console.log("Found councilor:", councilor);
+
+      // Update the appointment with the councilor
+      await User.findByIdAndUpdate(newAppointment.createdBy, {
+        $set: { assignedCounselor: councilor._id },
+      });
+    } else {
+      console.log("No councilor found for pin code:", pinCode);
+    }
     // PhonePe integration details
     const merchantId = process.env.MERCHANT_ID;
     const saltKey = process.env.SALT_KEY;
@@ -264,7 +286,7 @@ const createAppointment = async (req, res) => {
       merchantUserId: req.account,
       amount: totalAmount * 100, // Convert to paise
       callbackUrl: `${process.env.SERVER_URL}/api/payment-callback`,
-      mobileNumber: user.mobile,
+      mobileNumber: user?.mobile,
       paymentInstrument: {
         type: "PAY_PAGE",
       },
@@ -472,14 +494,14 @@ const updateLabTestStatus = async (req, res) => {
       return res.status(404).json({ message: "Appointment not found" });
     }
 
-    // Check if the appointment status is "Approve"
-    if (appointment.status !== "Approve") {
-      return res.status(400).json({
-        success: false,
-        message:
-          "Test status can only be updated when appointment status is 'Approve'",
-      });
-    }
+    // // Check if the appointment status is "Approve"
+    // if (appointment.status !== "Approve") {
+    //   return res.status(400).json({
+    //     success: false,
+    //     message:
+    //       "Test status can only be updated when appointment status is 'Approve'",
+    //   });
+    // }
 
     const lab = appointment.labs;
     if (!lab) {
