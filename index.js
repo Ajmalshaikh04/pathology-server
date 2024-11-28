@@ -6,12 +6,7 @@ const crypto = require("node:crypto");
 const axios = require("axios");
 const Appointment = require("./model/appointment");
 const app = express();
-// Allow requests from your frontend domain
-app.use(cors({
-  origin: 'https://startling-gnome-d0f76e.netlify.app',
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // Specify allowed methods
-  credentials: true // If you're sending cookies or HTTP authentication
-}));
+app.use(cors({ origin: '*' }));
 app.use(bodyParser.json({ limit: "10mb" }));
 app.use(bodyParser.urlencoded({ limit: "10mb", extended: true }));
 app.use(express.json({ limit: "10mb" }));
