@@ -1,12 +1,21 @@
 const express = require("express");
 const mongoose = require("mongoose");
-const cors = require("cors");
+// const cors = require("cors");
 const bodyParser = require("body-parser");
 const crypto = require("node:crypto");
 const axios = require("axios");
 const Appointment = require("./model/appointment");
 const app = express();
-app.use(cors({ origin: '*' }));
+
+// const corsOptions = {
+//   origin: 'https://startling-gnome-d0f76e.netlify.app', // Allow your frontend origin
+//   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // Specify allowed methods
+//   allowedHeaders: ['Content-Type', 'Authorization'], // Specify allowed headers
+//   credentials: true, // If you're using cookies or authentication
+// };
+
+app.use(require("cors")());
+
 app.use(bodyParser.json({ limit: "10mb" }));
 app.use(bodyParser.urlencoded({ limit: "10mb", extended: true }));
 app.use(express.json({ limit: "10mb" }));
